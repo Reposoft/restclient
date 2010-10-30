@@ -128,8 +128,8 @@ public class UnitHttpServer {
 		}
 		@Override
 		public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+			log.add(exchange);
 			chain.doFilter(exchange);
-			log.add(exchange);			
 		}
 	}
 	
