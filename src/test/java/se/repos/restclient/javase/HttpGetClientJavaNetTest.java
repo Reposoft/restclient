@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package se.repos.restclient;
+package se.repos.restclient.javase;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -25,8 +25,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+
 import org.junit.Test;
 
+import se.repos.restclient.HttpGetClient;
+import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.HttpGetClient.Response;
 
 public class HttpGetClientJavaNetTest {

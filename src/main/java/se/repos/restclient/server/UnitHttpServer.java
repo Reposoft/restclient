@@ -1,10 +1,11 @@
-package se.repos.restclient;
+package se.repos.restclient.server;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,6 +18,15 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * HTTP server suitable for unit testing
+ * and simple embedded services.
+ * 
+ * The only serious disadvantage of java's {@link HttpHandler} API 
+ * in the targeted use case, compared to the servlet API,
+ * is that there is no access to decoded query parameters.
+ * The closest is {@link HttpExchange#getRequestURI()}, {@link URI#getQuery()}.
+ */
 public class UnitHttpServer {
 	
 	// See also https://src.springframework.org/svn/spring-maintenance/trunk/tiger/src/org/springframework/remoting/support/SimpleHttpServerFactoryBean.java

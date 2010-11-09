@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package se.repos.restclient;
+package se.repos.restclient.javase;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +25,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 
+import se.repos.restclient.HttpGetClient;
+import se.repos.restclient.HttpStatusError;
+import se.repos.restclient.HttpGetClient.Response;
+
 public class HttpGetClientJavaNet implements HttpGetClient {
 	
 	// for URLEncoder
@@ -33,19 +37,13 @@ public class HttpGetClientJavaNet implements HttpGetClient {
 	@Override
 	public void read(String encodedUri, Map<String, String> queryParameters,
 			Response response) throws HttpStatusError, IOException {
-		URL url = new URL(encodedUri + '?' + getQueryStringEncoded(queryParameters));
-		read(url, response);
-	}
-	
-	@Override
-	public void read(String encodedUrl, Response response) 
-			throws IllegalArgumentException, IOException, HttpStatusError {
+		String u = encodedUri + '?' + getQueryStringEncoded(queryParameters);
 		URL url;
-		try {
-			url = new URL(encodedUrl);
+		try {		
+			url = new URL(u);
 		} catch (MalformedURLException e) {
-			throw new IllegalArgumentException(encodedUrl, e);
-		}
+			throw new IllegalArgumentException(u, e);
+		}			
 		read(url, response);
 	}
 		

@@ -35,30 +35,20 @@ import java.util.Map;
 public interface HttpGetClient {
 
 	/**
-	 * Requests REST servce response using map of query parameters.
+	 * Requests REST servce response.
+	 * 
+	 * Caller may implement error handling by analyzing which subclass
+	 * of IOException is thrown, including {@link HttpStatusError}.
+	 * 
 	 * @param encodedUri Service URL without query string, urlencoded
-	 * @param queryParameters Request parameters, not urlencoded
+	 * @param queryParameters Request parameters, not urlencoded, 
+	 *  null to allow parameters in URI, empty map to disallow query parameters
 	 * @param response Response handler implemented by the caller
 	 * @throws IOException From the hierarchy in java.net on connection errors
 	 * @throws HttpStatusError If connection succeeded but HTTP status is not 200
 	 */
 	public void read(String encodedUri, Map<String,String> queryParameters, Response response) 
 		throws IOException, HttpStatusError;
-	
-	/**
-	 * Requests REST service response.
-	 * 
-	 * Caller may implement error handling by analyzing which subclass
-	 * of IOException is thrown, including {@link HttpStatusError}.
-	 *
-	 * @param encodedUrl The URL with query string, urlencoded
-	 * @param response Response handler implemented by the caller
-	 * @throws IllegalArgumentException For invalid URL
-	 * @throws IOException From the hierarchy in java.net on connection errors
-	 * @throws HttpStatusError If connection succeeded but HTTP status is not 200
-	 */
-	public void read(String encodedUrl, Response response) 
-		throws IllegalArgumentException, IOException, HttpStatusError;
 	
 	/**
 	 * Response API that {@link HttpGetClient} uses to communicate the http response to the caller.

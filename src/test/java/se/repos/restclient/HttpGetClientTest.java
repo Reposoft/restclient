@@ -7,11 +7,14 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.OutputStream;
 
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import se.repos.restclient.HttpGetClient.Response;
+import se.repos.restclient.javase.HttpGetClientJavaNet;
+import se.repos.restclient.server.UnitHttpServer;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -40,7 +43,7 @@ public class HttpGetClientTest {
 	@Test public void testGet() throws IOException {
 		server.start();
 		HttpGetClient client = client();
-		client.read(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", new Response() {
+		client.read(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", null, new Response() {
 			@Override
 			public OutputStream getResponseStream(String contentType) {
 				return System.out;
@@ -61,7 +64,7 @@ public class HttpGetClientTest {
 		server.start();
 		HttpGetClient client = client();
 		try {
-			client.read(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", null);
+			client.read(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", null, null);
 			fail("Should have thrown custom exception for 401 status");
 		} catch (HttpStatusError e) {
 			assertEquals(401, e.getHttpStatus());
