@@ -30,6 +30,7 @@
 		
 	<dependencies>
 		<dependency>
+			<!-- https://github.com/solsson/slf4j -->
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple-debug</artifactId>
 			<version>1.6.2-SNAPSHOT</version>
