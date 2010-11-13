@@ -18,37 +18,39 @@ package se.repos.restclient.javase;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.Map;
 
 import se.repos.restclient.HttpGetClient;
 import se.repos.restclient.HttpStatusError;
-import se.repos.restclient.HttpGetClient.Response;
+import se.repos.restclient.RestGetClient;
+import se.repos.restclient.ResponseHeaders;
+import se.repos.restclient.RestResponse;
+import se.repos.restclient.RestURL;
+import se.repos.restclient.base.RestResponseWrapper;
 
-public class HttpGetClientJavaNet implements HttpGetClient {
+public class HttpGetClientJavaNet implements HttpGetClient, RestGetClient {
 	
-	// for URLEncoder
-	private String encoding = "UTF-8";
+	@Override
+	public void get(String encodedUrl, RestResponse response) throws IOException, HttpStatusError {
+		read(new RestURL(encodedUrl).getURL(), new RestResponseWrapper(response){});
+	}
 	
 	@Override
 	public void read(String encodedUri, Map<String, String> queryParameters,
-			Response response) throws HttpStatusError, IOException {
-		String u = encodedUri + '?' + getQueryStringEncoded(queryParameters);
-		URL url;
-		try {		
-			url = new URL(u);
-		} catch (MalformedURLException e) {
-			throw new IllegalArgumentException(u, e);
-		}			
-		read(url, response);
+			Response response) throws HttpStatusError, IOException {			
+		read(new RestURL(encodedUri, queryParameters).getURL(), response);
 	}
 		
 	public void read(URL url, Response response) 
 			throws IOException, HttpStatusError {
+		read(url, new RestResponseWrapper(response){});
+	}
+	
+	public void read(URL url, RestResponseWrapper response) throws IOException, HttpStatusError {
+		// TODO support Accept response
+		
 		HttpURLConnection conn;
 		try {
 			conn = (HttpURLConnection) url.openConnection();
@@ -70,8 +72,8 @@ public class HttpGetClientJavaNet implements HttpGetClient {
 		}
 		
 		// response should be ok, get content
-		String httpContentType = conn.getContentType();
-		OutputStream receiver = response.getResponseStream(httpContentType);
+		ResponseHeaders headers = new URLConnectionResponseHeaders(conn);
+		OutputStream receiver = response.getResponseStream(headers);
 		try {
 			InputStream body = conn.getInputStream();
 			pipe(body, receiver);
@@ -79,25 +81,6 @@ public class HttpGetClientJavaNet implements HttpGetClient {
 		} catch (IOException e) {
 			throw check(e);
 		}
-	}
-
-	/**
-	 * Client in java.net lacks built in conversion of map to query string.
-	 */
-	protected String getQueryStringEncoded(Map<String, String> queryParameters)
-			throws UnsupportedEncodingException {
-		if (queryParameters.isEmpty()) {
-			return "";
-		}
-		StringBuffer q = new StringBuffer();
-		for (String key : queryParameters.keySet()) {
-			q.append("&");
-			q.append(key);
-			q.append("=");
-			q.append(URLEncoder.encode(queryParameters.get(key), this.encoding));
-		}
-		String encodedQueryString = q.substring(1);
-		return encodedQueryString;
 	}
 	
 	/**

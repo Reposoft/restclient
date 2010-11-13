@@ -31,6 +31,8 @@ import java.util.Map;
  * 
  * Does not support authentication /yet) so the calling application
  * must use {@link java.net.Authenticator} to set static credentials.
+ * 
+ * @deprecated Use {@link RestGetClient}
  */
 public interface HttpGetClient {
 
@@ -68,6 +70,6 @@ public interface HttpGetClient {
 		 */
 		OutputStream getResponseStream(String contentType);
 		
-	}	
+	}
 	
 }
