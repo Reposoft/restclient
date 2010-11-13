@@ -22,15 +22,18 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
+import com.sun.net.ssl.HttpsURLConnection;
+
 import se.repos.restclient.HttpGetClient;
 import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.RestGetClient;
 import se.repos.restclient.ResponseHeaders;
+import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.RestURL;
 import se.repos.restclient.base.RestResponseWrapper;
 
-public class HttpGetClientJavaNet implements HttpGetClient, RestGetClient {
+public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 	
 	@Override
 	public void get(String encodedUrl, RestResponse response) throws IOException, HttpStatusError {
@@ -59,6 +62,8 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestGetClient {
 		} catch (IOException e) {
 			throw check(e);
 		}
+		// authentication and some settings is static for URLConnection, preserver current setting
+		conn.setInstanceFollowRedirects(true);
 		try {
 			conn.connect();
 		} catch (IOException e) {
@@ -67,6 +72,7 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestGetClient {
 		
 		// check status code before trying to get response body
 		// to avoid the unclassified IOException
+		// TODO for some reason this seems to stop followRedirects
 		if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
 			throw new HttpStatusError(conn.getResponseCode(), url);
 		}
@@ -98,6 +104,26 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestGetClient {
 		    destination.write(buffer, 0, len);
 		    len = source.read(buffer);
 		}
+	}
+
+	@Override
+	public ResponseHeaders head(String uri) throws IOException {
+		URL url = new RestURL(uri).getURL();
+		HttpURLConnection con;
+		try {
+			con = (HttpURLConnection) url.openConnection();
+		} catch (ClassCastException e) {
+			throw new RuntimeException("Non-HTTP protocols not supported. Got URL: " + url);
+		} catch (IOException e) {
+			throw check(e);
+		}
+		con.setRequestMethod("HEAD");
+		try {
+			con.connect();
+		} catch (IOException e) {
+			throw check(e);
+		}
+		return new URLConnectionResponseHeaders(con);
 	}
 	
 }

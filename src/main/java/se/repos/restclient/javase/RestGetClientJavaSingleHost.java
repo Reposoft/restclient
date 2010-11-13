@@ -3,7 +3,9 @@ package se.repos.restclient.javase;
 import java.io.IOException;
 
 import se.repos.restclient.HttpStatusError;
+import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestGetClient;
+import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 
 /**
@@ -12,9 +14,9 @@ import se.repos.restclient.RestResponse;
  * Currently a generic implementation but named for JavaSE's client
  * to be able to add library specific features such as connection keep-alive.
  */
-public class RestGetClientJavaSingleHost implements RestGetClient {
+public class RestGetClientJavaSingleHost implements RestClient {
 
-	private RestGetClient client;
+	private RestClient client;
 	private String host;
 
 	/**
@@ -31,6 +33,11 @@ public class RestGetClientJavaSingleHost implements RestGetClient {
 			throw new IllegalArgumentException("URIs must be relative to server root starting with slash");
 		} 
 		client.get(host + uri, response);
+	}
+
+	@Override
+	public ResponseHeaders head(String uri) throws IOException {
+		return client.head(host + uri);
 	}
 	
 }

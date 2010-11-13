@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ResponseHeadersMap extends ResponseHeadersReadOnly {
+public abstract class ResponseHeadersMap extends ResponseHeadersReadOnly {
 
 	private Map<String, List<String>> map;
 
@@ -14,9 +14,17 @@ public class ResponseHeadersMap extends ResponseHeadersReadOnly {
 	}
 	
 	@Override
+	public abstract int getStatus();
+	
+	@Override
 	public String getContentType() {
-		// TODO Auto-generated method stub
-		return null;
+		if (true) throw new UnsupportedOperationException("should probably be abstract");
+		// TODO use this logic for getValue/getString method
+		List<String> v = get("Content-Type");
+		if (v == null || v.size() == 0) {
+			return null;
+		}
+		return v.get(0);
 	}
 
 	@Override

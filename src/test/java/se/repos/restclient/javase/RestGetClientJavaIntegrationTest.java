@@ -4,8 +4,10 @@ package se.repos.restclient.javase;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 
 import org.junit.After;
@@ -15,6 +17,7 @@ import org.junit.Test;
 import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestGetClient;
+import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.HttpGetClient.Response;
 import se.repos.restclient.javase.HttpGetClientJavaNet;
@@ -32,7 +35,7 @@ public class RestGetClientJavaIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		server = UnitHttpServer.create(); // select implementation to be tested
+		server = UnitHttpServer.create();
 	}
 
 	@After
@@ -40,7 +43,7 @@ public class RestGetClientJavaIntegrationTest {
 		server.stop(0);
 	}
 	
-	RestGetClient client() {
+	RestClient client() {
 		return new HttpGetClientJavaNet();
 	}
 
@@ -50,6 +53,8 @@ public class RestGetClientJavaIntegrationTest {
 		client.get(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", new RestResponse() {
 			@Override
 			public OutputStream getResponseStream(ResponseHeaders headers) {
+				assertEquals(200, headers.getStatus());
+				assertEquals("text/plain", headers.getContentType());
 				return System.out;
 			}
 		});
@@ -76,4 +81,56 @@ public class RestGetClientJavaIntegrationTest {
 		assertEquals(1, server.getLog().size());
 	}
 
+	@Test public void testFollowRedirect() throws IOException {
+		server.createContext("/1").setHandler(new HttpHandler() {
+			@Override
+			public void handle(HttpExchange e) throws IOException {
+				e.sendResponseHeaders(302, 0);
+				e.getResponseHeaders().put("Location", Arrays.asList("/2"));
+			}
+		});
+		server.createContext("/2").setHandler(new HttpHandler() {
+			@Override
+			public void handle(HttpExchange e) throws IOException {
+				e.sendResponseHeaders(301, 0);
+				e.getResponseHeaders().put("Location", Arrays.asList("/3"));
+			}
+		});
+		server.createContext("/3").setHandler(new HttpHandler() {
+			@Override
+			public void handle(HttpExchange e) throws IOException {
+				e.getResponseBody().write("yes".getBytes());
+			}
+		});
+		server.start();
+		RestClient client = client();
+		final OutputStream out = new ByteArrayOutputStream();
+		// HEAD to verify server
+		assertEquals(302, client.head(server.getRoot() + "/1").getStatus());
+		assertEquals(301, client.head(server.getRoot() + "/2").getStatus());
+		assertEquals(200, client.head(server.getRoot() + "/3").getStatus());
+		// GET should follow redirects
+		client.get(server.getRoot() + "/2", new RestResponse() {
+			@Override
+			public OutputStream getResponseStream(ResponseHeaders headers) {
+				return out;
+			}
+		});
+		assertEquals("should have been redirected on both 301 and 302", "yes", out.toString());
+	}	
+	
+	@Test public void testHead() throws IOException {
+		server.createContext("/").setHandler(new HttpHandler() {
+			@Override
+			public void handle(HttpExchange e) throws IOException {
+				e.sendResponseHeaders(302, 0);
+				e.getResponseHeaders().put("Location", Arrays.asList("/start/"));
+			}
+		});
+		server.start();
+		RestClient client = client();
+		ResponseHeaders head = client.head(server.getRoot() + "/");
+		assertEquals("should return the status code, not follow the redirect", 302, head.getStatus());
+	}
+	
 }

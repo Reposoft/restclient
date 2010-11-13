@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
@@ -28,6 +31,8 @@ import com.sun.net.httpserver.HttpServer;
  * The closest is {@link HttpExchange#getRequestURI()}, {@link URI#getQuery()}.
  */
 public class UnitHttpServer {
+	
+	private static final Logger logger = LoggerFactory.getLogger(UnitHttpServer.class);
 	
 	// See also https://src.springframework.org/svn/spring-maintenance/trunk/tiger/src/org/springframework/remoting/support/SimpleHttpServerFactoryBean.java
 
@@ -46,6 +51,7 @@ public class UnitHttpServer {
 
 	private HttpServer server;
 	private LogFilter logFilter;
+	private MemoryLogFilter memoryLogFilter;
 	
 	private InetSocketAddress address = null;
 	private boolean hasContext = false;
@@ -54,6 +60,7 @@ public class UnitHttpServer {
 	protected UnitHttpServer(HttpServer server) {
 		this.server = server;
 		this.logFilter = new LogFilter();
+		this.memoryLogFilter = new MemoryLogFilter();
 		this.bindRandom();
 	}
 
@@ -62,6 +69,7 @@ public class UnitHttpServer {
 	 */
 	public HttpContext createContext(String path) {
 		HttpContext context = this.server.createContext(path);
+		context.getFilters().add(memoryLogFilter);
 		context.getFilters().add(logFilter);
 		this.hasContext = true;
 		return context;
@@ -105,7 +113,7 @@ public class UnitHttpServer {
 	 * @return reference to the current request log, mutable
 	 */
 	public Queue<HttpExchange> getLog() {
-		return logFilter.log;
+		return memoryLogFilter.log;
 	}
 	
 	/**
@@ -118,7 +126,7 @@ public class UnitHttpServer {
 			try {
 				server.bind(new InetSocketAddress(port), BIND_BACKLOG); 
 				address = server.getAddress();
-				System.err.println("(debug) Server online at " + address);
+				logger.debug("Server online at {}", address);
 			} catch (BindException e) {
 				if (retries == PORT_RETRIES) {
 					throw new RuntimeException("Failed to set up server", e);
@@ -130,7 +138,7 @@ public class UnitHttpServer {
 		}
 	}
 	
-	protected class LogFilter extends Filter {
+	protected class MemoryLogFilter extends Filter {
 		Queue<HttpExchange> log = new LinkedList<HttpExchange>();
 		@Override
 		public String description() {
@@ -143,12 +151,22 @@ public class UnitHttpServer {
 		}
 	}
 	
+	protected class LogFilter extends Filter {
+		@Override
+		public String description() {
+			return "Logs requests using logging frameworkd";
+		}
+		@Override
+		public void doFilter(HttpExchange e, Chain chain) throws IOException {
+			chain.doFilter(e);
+			logger.info("{} {} {} {}", new Object[] {e.getRequestMethod(), 
+					e.getRemoteAddress(), e.getResponseCode(), e.getRequestURI()});
+		}
+	}
 	
 	static class DefaultHandler implements HttpHandler {
 		@Override
 		public void handle(HttpExchange e) throws IOException {
-			System.err.println("(debug) " + e.getRemoteAddress() + " " + e.getRequestURI());
-			
 			e.getResponseHeaders().set("Content-Type", "text/plain");
 			e.getResponseHeaders().set("X-Test", "testing");
 			e.sendResponseHeaders(200, 0);
