@@ -26,6 +26,23 @@ public abstract class ResponseHeadersMap extends ResponseHeadersReadOnly {
 		}
 		return v.get(0);
 	}
+	
+	@Override
+	public String toString() {
+		String separator = ", ";
+		StringBuffer h = new StringBuffer();
+		for (Map.Entry<String, List<String>> e : this.entrySet()) {
+			for (String v : e.getValue()) {
+				h.append(separator);
+				if (e.getKey() != null) {
+					h.append(e.getKey()).append(": ");
+				}
+				h.append(v);
+			}
+		}
+		if (h.length() > separator.length()) return h.substring(separator.length()); 
+		return "(empty headers)";
+	}
 
 	@Override
 	public int size() {
