@@ -86,6 +86,8 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 			body.close();
 		} catch (IOException e) {
 			throw check(e);
+		} finally {
+			conn.disconnect();
 		}
 	}
 	
@@ -122,6 +124,8 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 			con.connect();
 		} catch (IOException e) {
 			throw check(e);
+		} finally {
+			con.disconnect();
 		}
 		return new URLConnectionResponseHeaders(con);
 	}
