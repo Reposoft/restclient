@@ -39,9 +39,9 @@
 		<dependency>
 		    <groupId>org.eclipse.jetty</groupId>
 		    <artifactId>example-jetty-embedded</artifactId>
-		    <version>8.0.0.M1</version>
+		    <version>8.0.0.M2</version>
 		    <scope>test</scope>
-		</dependency>			
+		</dependency>
 		<dependency>
 		    <groupId>com.google.inject</groupId>
 		    <artifactId>guice</artifactId>

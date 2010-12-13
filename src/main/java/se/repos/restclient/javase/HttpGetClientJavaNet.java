@@ -22,6 +22,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sun.net.ssl.HttpsURLConnection;
 
 import se.repos.restclient.HttpGetClient;
@@ -34,6 +37,16 @@ import se.repos.restclient.RestURL;
 import se.repos.restclient.base.RestResponseWrapper;
 
 public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
+	
+	private static final Logger logger = LoggerFactory.getLogger(HttpGetClientJavaNet.class);
+	
+	/**
+	 * Timeout in milliseconds.
+	 * Default: {@value #DEFAULT_CONNECT_TIMEOUT}.
+	 */
+	public static final int DEFAULT_CONNECT_TIMEOUT = 5000;
+	
+	private int timeout = DEFAULT_CONNECT_TIMEOUT;
 	
 	@Override
 	public void get(String encodedUrl, RestResponse response) throws IOException, HttpStatusError {
@@ -63,7 +76,9 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 			throw check(e);
 		}
 		// authentication and some settings is static for URLConnection, preserver current setting
+		conn.setConnectTimeout(timeout);
 		conn.setInstanceFollowRedirects(true);
+		logger.info("GET connection to {}", url);
 		try {
 			conn.connect();
 		} catch (IOException e) {
@@ -120,14 +135,27 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 			throw check(e);
 		}
 		con.setRequestMethod("HEAD");
+		con.setConnectTimeout(timeout);
+		ResponseHeaders head = null;
 		try {
+			logger.warn("attempting HEAD request to {}", uri);
 			con.connect();
+			logger.debug("HEAD {} connected", uri);
+			// gets rid of the EOF issue in Jetty test:
+			InputStream b = con.getInputStream();
+			logger.debug("HEAD {} output requested", uri);
+			while (b.read() != -1) {}
+			logger.debug("HEAD {} output read", uri);
+			con.getInputStream().close();
+			logger.debug("HEAD {} output closed", uri);
+			head = new URLConnectionResponseHeaders(con);
+			logger.debug("HEAD {} headers read", uri);
 		} catch (IOException e) {
 			throw check(e);
 		} finally {
 			con.disconnect();
 		}
-		return new URLConnectionResponseHeaders(con);
+		return head;
 	}
 	
 }
