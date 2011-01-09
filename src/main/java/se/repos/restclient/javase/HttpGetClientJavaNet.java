@@ -29,7 +29,6 @@ import com.sun.net.ssl.HttpsURLConnection;
 
 import se.repos.restclient.HttpGetClient;
 import se.repos.restclient.HttpStatusError;
-import se.repos.restclient.RestGetClient;
 import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;

@@ -18,7 +18,7 @@ public abstract class ResponseHeadersMap extends ResponseHeadersReadOnly {
 	
 	@Override
 	public String getContentType() {
-		if (true) throw new UnsupportedOperationException("should probably be abstract");
+		if (true) throw new UnsupportedOperationException("should be overridden");
 		// TODO use this logic for getValue/getString method
 		List<String> v = get("Content-Type");
 		if (v == null || v.size() == 0) {

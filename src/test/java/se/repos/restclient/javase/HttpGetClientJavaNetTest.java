@@ -102,7 +102,7 @@ public class HttpGetClientJavaNetTest {
 		client.read("http://localhost/r/a.txt", params, r);
 		assertEquals(1, urls.size());
 		assertEquals("/r/a.txt", urls.get(0).getPath());
-		assertEquals("", urls.get(0).getQuery());
+		assertEquals(null, urls.get(0).getQuery());
 	}
 
 }
