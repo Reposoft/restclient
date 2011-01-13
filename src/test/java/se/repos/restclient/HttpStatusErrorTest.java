@@ -27,11 +27,12 @@ public class HttpStatusErrorTest {
 
 	@Test
 	public void testHttpStatusError() throws MalformedURLException {
-		HttpStatusError e = new HttpStatusError(401, new URL("http://localhost/x/"));
+		HttpStatusError e = new HttpStatusError(401, new URL("http://localhost/x/"), "<html/>");
 		assertTrue("Should be an IOException subclass like the other errors in java.net",
 				IOException.class.isAssignableFrom(e.getClass()));
 		assertEquals("Message should be same as from HttpURLConnection.getInputStream",
 				"Server returned HTTP response code: 401 for URL: http://localhost/x/", e.getMessage());
+		assertEquals("Response should be the page body from server", "<html/>", e.getResponse());
 	}
 
 }

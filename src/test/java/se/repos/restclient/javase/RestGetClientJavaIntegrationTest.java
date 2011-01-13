@@ -9,9 +9,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import junit.framework.AssertionFailedError;
-
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -22,6 +19,7 @@ import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestGetClient;
 import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
+import se.repos.restclient.RestResponseBean;
 import se.repos.restclient.HttpGetClient.Response;
 import se.repos.restclient.javase.HttpGetClientJavaNet;
 import se.repos.restclient.server.UnitHttpServer;
@@ -64,6 +62,33 @@ public class RestGetClientJavaIntegrationTest {
 		System.out.flush();
 		assertEquals("should have done 1 request", 1, server.getLog().size());
 	}
+
+	@Test public void testGetServerError() {
+		final String body = "<html><body>\n<h1>Server error</h1><p>This error occurred</p></body></html>";
+		server.createContext("/").setHandler(new HttpHandler() {
+			@Override
+			public void handle(HttpExchange e) throws IOException {
+				e.sendResponseHeaders(500, 0);
+				OutputStream out = e.getResponseBody();
+				out.write(body.getBytes());
+				out.close();
+				e.close();
+			}
+		});
+		server.start();
+		RestClient client = client();
+		RestResponseBean response = new RestResponseBean();
+		
+		try {
+			client.get(server.getRoot() + "/", response);
+			fail("Should throw status error on 500");
+		} catch (HttpStatusError e) {
+			assertEquals(500, e.getHttpStatus());
+			assertEquals(body, e.getResponse());
+		} catch (IOException e1) {
+			fail("Should throw status error not IOException");
+		}
+	}	
 	
 	@Test public void testHead() throws IOException {
 		server.createContext("/").setHandler(new HttpHandler() {

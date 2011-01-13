@@ -15,6 +15,7 @@
  */
 package se.repos.restclient.javase;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -88,7 +89,10 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 		// to avoid the unclassified IOException
 		// TODO for some reason this seems to stop followRedirects
 		if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-			throw new HttpStatusError(conn.getResponseCode(), url);
+			InputStream body = conn.getErrorStream();
+			ByteArrayOutputStream b = new ByteArrayOutputStream();
+			pipe(body, b);
+			throw new HttpStatusError(conn.getResponseCode(), url, b.toString());
 		}
 		
 		// response should be ok, get content

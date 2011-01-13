@@ -20,23 +20,26 @@ import java.net.URL;
 
 /**
  * Error thrown if we got a connection but the server returned a non-200 status code.
- * Looks like the IOException that HttpURLConnection.getInputStream throws
- * but provides access to the status code.
+ * The String from {@link #getMessage()} looks like the IOException that HttpURLConnection.getInputStream
+ * throws but this class also provides access to the status code.
+ * The repsonse body, i.e. the error message from the server, is accessed using {@link #getResponse()}.
  */
 public class HttpStatusError extends IOException {
 
 	private static final long serialVersionUID = 1L;
 	private int status;
 	private URL url;
+	private String body;
 
 	/**
 	 * @param httpStatus <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html">status code</a> from the server
 	 * @param cause from the underlying http client
 	 */
-	public HttpStatusError(int httpStatus, URL url) {
+	public HttpStatusError(int httpStatus, URL url, String body) {
 		super("Server returned HTTP response code: " + httpStatus + " for URL: " + url);
 		this.status = httpStatus;
 		this.url = url;
+		this.body = body;
 	}
 
 	/**
@@ -51,6 +54,13 @@ public class HttpStatusError extends IOException {
 	 */
 	public URL getUrl() {
 		return this.url;
+	}
+
+	/**
+	 * @return Response body from server, assumed to be readable as text or html source
+	 */
+	public String getResponse() {
+		return body;
 	}
 	
 }
