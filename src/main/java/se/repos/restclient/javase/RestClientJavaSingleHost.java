@@ -14,7 +14,7 @@ import se.repos.restclient.RestResponse;
  * Currently a generic implementation but named for JavaSE's client
  * to be able to add library specific features such as connection keep-alive.
  */
-public class RestGetClientJavaSingleHost implements RestClient {
+public class RestClientJavaSingleHost implements RestClient {
 
 	private RestClient client;
 	private String host;
@@ -22,7 +22,7 @@ public class RestGetClientJavaSingleHost implements RestClient {
 	/**
 	 * @param serverRootUrl protocol, domain and possibly port number, no trailing slash
 	 */
-	public RestGetClientJavaSingleHost(String serverRootUrl) {
+	public RestClientJavaSingleHost(String serverRootUrl) {
 		this.client = new HttpGetClientJavaNet();
 		this.host = serverRootUrl;
 	}

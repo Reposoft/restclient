@@ -31,7 +31,7 @@ public class RestClientJavaJettyTest {
 		server.start();
 		//wait until server closed://server.join();
 		
-		RestClient client = new RestGetClientJavaSingleHost("http://127.0.0.1:49999");
+		RestClient client = new RestClientJavaSingleHost("http://127.0.0.1:49999");
 		
 		RestResponseBean r1 = new RestResponseBean();
 		client.get("/", r1);

@@ -26,8 +26,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.net.ssl.HttpsURLConnection;
-
 import se.repos.restclient.HttpGetClient;
 import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
@@ -89,9 +87,16 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 		// to avoid the unclassified IOException
 		// TODO for some reason this seems to stop followRedirects
 		if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-			InputStream body = conn.getErrorStream();
 			ByteArrayOutputStream b = new ByteArrayOutputStream();
-			pipe(body, b);
+			try {
+				InputStream body = conn.getErrorStream();
+				pipe(body, b);
+				body.close();
+			} catch (IOException e) {
+				throw check(e);
+			} finally {
+				conn.disconnect();
+			}
 			throw new HttpStatusError(conn.getResponseCode(), url, b.toString());
 		}
 		
