@@ -122,6 +122,18 @@ public class RestGetClientJavaIntegrationTest {
 		}
 		assertEquals(1, server.getLog().size());
 	}
+
+	@Test public void testHeadAccessDenied() throws IOException {
+		server.createContext("/").setHandler(new HttpHandler() {
+			@Override
+			public void handle(HttpExchange e) throws IOException {
+				e.sendResponseHeaders(403, 0);
+				e.close();
+			}
+		});
+		server.start();		
+		assertEquals(403, client().head(server.getRoot() + "/").getStatus());
+	}	
 	
 	@Ignore("known issue for 1.0")
 	@Test public void testGetAfterHead() throws IOException {
@@ -149,7 +161,7 @@ public class RestGetClientJavaIntegrationTest {
 		assertEquals("second HEAD", 200, client.head(server.getRoot() + "/").getStatus());
 		assertEquals("third HEAD ", 200, client.head(server.getRoot() + "/").getStatus());
 	}
-
+	
 	@Ignore("known issue for 1.0")
 	@Test public void testFollowRedirect() throws IOException {
 		server.createContext("/1").setHandler(new HttpHandler() {
