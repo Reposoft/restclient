@@ -56,7 +56,8 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 			Response response) throws HttpStatusError, IOException {			
 		read(new RestURL(encodedUri, queryParameters).getURL(), response);
 	}
-		
+	
+	@Deprecated
 	public void read(URL url, Response response) 
 			throws IOException, HttpStatusError {
 		read(url, new RestResponseWrapper(response){});
@@ -148,16 +149,19 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 		try {
 			logger.warn("attempting HEAD request to {}", uri);
 			con.connect();
-			logger.debug("HEAD {} connected", uri);
+			logger.trace("HEAD {} connected", uri);
 			// gets rid of the EOF issue in Jetty test:
-			InputStream b = con.getInputStream();
-			logger.debug("HEAD {} output requested", uri);
-			while (b.read() != -1) {}
-			logger.debug("HEAD {} output read", uri);
-			con.getInputStream().close();
-			logger.debug("HEAD {} output closed", uri);
+			InputStream b;
+			if (con.getResponseCode() == 200) {
+				b = con.getInputStream();
+				logger.trace("HEAD {} output requested", uri);
+				while (b.read() != -1) {}
+				logger.trace("HEAD {} output read", uri);
+				b.close();
+			}
+			logger.trace("HEAD {} output closed", uri);
 			head = new URLConnectionResponseHeaders(con);
-			logger.debug("HEAD {} headers read", uri);
+			logger.trace("HEAD {} headers read", uri);
 		} catch (IOException e) {
 			throw check(e);
 		} finally {
