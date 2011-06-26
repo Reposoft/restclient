@@ -39,4 +39,8 @@ public class RestClientJavaNetTest {
 		at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1313)
 			 */
 	
+	@Test public void empty() {
+		// no unit tests yet
+	}
+	
 }
