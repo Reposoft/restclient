@@ -32,10 +32,15 @@ import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.RestURL;
+import se.repos.restclient.base.RestClientMultiHostBase;
 import se.repos.restclient.base.RestResponseWrapper;
 
-public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
+public class HttpGetClientJavaNet extends RestClientMultiHostBase implements HttpGetClient, RestClient {
 	
+	public HttpGetClientJavaNet(String serverRootUrl) {
+		super(serverRootUrl);
+	}
+
 	private static final Logger logger = LoggerFactory.getLogger(HttpGetClientJavaNet.class);
 	
 	/**
@@ -47,11 +52,6 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 	private int timeout = DEFAULT_CONNECT_TIMEOUT;
 	
 	@Override
-	public void get(String encodedUrl, RestResponse response) throws IOException, HttpStatusError {
-		read(new RestURL(encodedUrl).getURL(), new RestResponseWrapper(response){});
-	}
-	
-	@Override
 	public void read(String encodedUri, Map<String, String> queryParameters,
 			Response response) throws HttpStatusError, IOException {			
 		read(new RestURL(encodedUri, queryParameters).getURL(), response);
@@ -60,6 +60,13 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 	@Deprecated
 	public void read(URL url, Response response) 
 			throws IOException, HttpStatusError {
+		read(url, new RestResponseWrapper(response){});
+	}
+	
+
+	@Override
+	public void get(URL url, RestResponse response) throws IOException,
+			HttpStatusError {
 		read(url, new RestResponseWrapper(response){});
 	}
 	
@@ -133,8 +140,7 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 	}
 
 	@Override
-	public ResponseHeaders head(String uri) throws IOException {
-		URL url = new RestURL(uri).getURL();
+	public ResponseHeaders head(URL url) throws IOException {	
 		HttpURLConnection con;
 		try {
 			con = (HttpURLConnection) url.openConnection();
@@ -147,21 +153,21 @@ public class HttpGetClientJavaNet implements HttpGetClient, RestClient {
 		con.setConnectTimeout(timeout);
 		ResponseHeaders head = null;
 		try {
-			logger.warn("attempting HEAD request to {}", uri);
+			logger.warn("attempting HEAD request to {}", url);
 			con.connect();
-			logger.trace("HEAD {} connected", uri);
+			logger.trace("HEAD {} connected", url);
 			// gets rid of the EOF issue in Jetty test:
 			InputStream b;
 			if (con.getResponseCode() == 200) {
 				b = con.getInputStream();
-				logger.trace("HEAD {} output requested", uri);
+				logger.trace("HEAD {} output requested", url);
 				while (b.read() != -1) {}
-				logger.trace("HEAD {} output read", uri);
+				logger.trace("HEAD {} output read", url);
 				b.close();
 			}
-			logger.trace("HEAD {} output closed", uri);
+			logger.trace("HEAD {} output closed", url);
 			head = new URLConnectionResponseHeaders(con);
-			logger.trace("HEAD {} headers read", uri);
+			logger.trace("HEAD {} headers read", url);
 		} catch (IOException e) {
 			throw check(e);
 		} finally {

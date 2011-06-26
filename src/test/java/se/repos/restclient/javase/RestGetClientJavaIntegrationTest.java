@@ -45,13 +45,13 @@ public class RestGetClientJavaIntegrationTest {
 	}
 	
 	RestClient client() {
-		return new HttpGetClientJavaNet();
+		return new HttpGetClientJavaNet(server.getRoot().toString());
 	}
 
 	@Test public void testGet() throws IOException {
 		server.start();
 		RestClient client = client();
-		client.get(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", new RestResponse() {
+		client.get("/a/b.txt?c=d&e=f&e=g", new RestResponse() {
 			@Override
 			public OutputStream getResponseStream(ResponseHeaders headers) {
 				assertEquals(200, headers.getStatus());
@@ -80,7 +80,7 @@ public class RestGetClientJavaIntegrationTest {
 		RestResponseBean response = new RestResponseBean();
 		
 		try {
-			client.get(server.getRoot() + "/", response);
+			client.get("/", response);
 			fail("Should throw status error on 500");
 		} catch (HttpStatusError e) {
 			assertEquals(500, e.getHttpStatus());
@@ -100,7 +100,7 @@ public class RestGetClientJavaIntegrationTest {
 		});
 		server.start();
 		RestClient client = client();
-		ResponseHeaders head = client.head(server.getRoot() + "/");
+		ResponseHeaders head = client.head("/");
 		assertEquals("should return the status code, not follow the redirect", 302, head.getStatus());
 	}
 	
@@ -115,7 +115,7 @@ public class RestGetClientJavaIntegrationTest {
 		server.start();
 		RestGetClient client = client();
 		try {
-			client.get(server.getRoot() + "/a/b.txt?c=d&e=f&e=g", null);
+			client.get("/a/b.txt?c=d&e=f&e=g", null);
 			fail("Should have thrown custom exception for 401 status");
 		} catch (HttpStatusError e) {
 			assertEquals(401, e.getHttpStatus());
@@ -132,16 +132,16 @@ public class RestGetClientJavaIntegrationTest {
 			}
 		});
 		server.start();		
-		assertEquals(403, client().head(server.getRoot() + "/").getStatus());
+		assertEquals(403, client().head("/").getStatus());
 	}	
 	
 	@Ignore("known issue for 1.0")
 	@Test public void testGetAfterHead() throws IOException {
 		server.start();
 		RestClient client = client();
-		assertEquals(200, client.head(server.getRoot() + "/").getStatus());
+		assertEquals(200, client.head("/").getStatus());
 		try {
-			client.get(server.getRoot() + "/", new RestResponse() {
+			client.get("/", new RestResponse() {
 				@Override
 				public OutputStream getResponseStream(ResponseHeaders headers) {
 					assertEquals(200, headers.getStatus());
@@ -191,7 +191,7 @@ public class RestGetClientJavaIntegrationTest {
 		RestClient client = client();
 		final OutputStream out = new ByteArrayOutputStream();
 		// GET should follow redirects
-		client.get(server.getRoot() + "/1", new RestResponse() {
+		client.get("/1", new RestResponse() {
 			@Override
 			public OutputStream getResponseStream(ResponseHeaders headers) {
 				return out;

@@ -55,7 +55,7 @@ public class HttpGetClientJavaNetTest {
 	public void testUrl() throws IOException {
 		final Response r = mock(Response.class);
 		final List<URL> urls = new LinkedList<URL>();
-		HttpGetClientJavaNet client = new HttpGetClientJavaNet() {
+		HttpGetClientJavaNet client = new HttpGetClientJavaNet("http://localhost") {
 			@Override
 			public void read(URL url, Response response) throws IOException,
 					HttpStatusError {
@@ -72,7 +72,7 @@ public class HttpGetClientJavaNetTest {
 			put("list[]", "1");
 		}};
 		
-		client.read("http://localhost/r/a.txt", params, r);
+		client.read("/r/a.txt", params, r);
 		assertEquals(1, urls.size());
 		assertEquals("/r/a.txt", urls.get(0).getPath());
 		String q = urls.get(0).getQuery();
@@ -88,7 +88,7 @@ public class HttpGetClientJavaNetTest {
 	public void testNoQueryString() throws HttpStatusError, IOException {
 		final Response r = mock(Response.class);
 		final List<URL> urls = new LinkedList<URL>();
-		HttpGetClientJavaNet client = new HttpGetClientJavaNet() {
+		HttpGetClientJavaNet client = new HttpGetClientJavaNet("http://localhost") {
 			@Override
 			public void read(URL url, Response response) throws IOException,
 					HttpStatusError {
@@ -99,7 +99,7 @@ public class HttpGetClientJavaNetTest {
 		
 		Map<String, String> params = new HashMap<String, String>();
 		
-		client.read("http://localhost/r/a.txt", params, r);
+		client.read("/r/a.txt", params, r);
 		assertEquals(1, urls.size());
 		assertEquals("/r/a.txt", urls.get(0).getPath());
 		assertEquals(null, urls.get(0).getQuery());

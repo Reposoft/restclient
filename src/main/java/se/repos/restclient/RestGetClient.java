@@ -17,7 +17,7 @@ public interface RestGetClient {
 	 * up the behavior of the HTTP client and provides as service to its classes.
 	 * for instance using dependency injection.
 	 * 
-	 * @param uri resource address, typically an encoded URL, for conversions see {@link RestURL}
+	 * @param uri resource address from server root, typically an encoded URI, for conversions see {@link RestURL}
 	 * @param response response expectations and handling
 	 * @throws IOException From the hierarchy in java.net on connection errors
 	 * @throws HttpStatusError If connection succeeded but HTTP status is not 200
