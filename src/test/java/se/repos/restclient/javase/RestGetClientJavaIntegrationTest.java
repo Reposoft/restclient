@@ -20,8 +20,6 @@ import se.repos.restclient.RestGetClient;
 import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.RestResponseBean;
-import se.repos.restclient.HttpGetClient.Response;
-import se.repos.restclient.javase.HttpGetClientJavaNet;
 import se.repos.restclient.server.UnitHttpServer;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -45,7 +43,7 @@ public class RestGetClientJavaIntegrationTest {
 	}
 	
 	RestClient client() {
-		return new HttpGetClientJavaNet(server.getRoot().toString());
+		return new RestClientJavaNet(server.getRoot().toString(), null);
 	}
 
 	@Test public void testGet() throws IOException {

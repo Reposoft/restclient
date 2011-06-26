@@ -73,5 +73,25 @@ public class RestURLTest {
 		// encoding of charset-dependent characters
 		
 	}
+	
+	@Test public void test1() {
+		@SuppressWarnings("serial")
+		Map<String, String> params = new HashMap<String, String>() {{ 
+			put("key", "val");
+			put("space", "a b");
+			put("swe", "tåt");
+			put("list[]", "1");
+		}};
+		
+		RestURL url = new RestURL("http://somehost/r/a.txt", params);
+		
+		String q = url.toString();
+		System.out.println(q);
+		assertTrue(q.contains("key=val"));
+		assertTrue("Both types of space encoding are ok", q.contains("a+b") || q.contains("a%20b"));
+		assertTrue("Encoding should be UTF-8", q.contains("t%C3%A5t"));
+		// keys should never be encoded, if they need to it is the web service that should be changed
+		assertTrue("Should not encode keys", q.contains("list[]=1"));
+	}
 
 }

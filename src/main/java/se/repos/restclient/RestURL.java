@@ -10,6 +10,8 @@ import java.util.Map;
 /**
  * REST resource URL helper, toString returns RFC2396 encoded URL.
  * Helper class for {@link RestGetClient#get(URL, RestResponse)} etc.
+ * 
+ * @todo this utility class has not been updated for 1.2+, to support URIs without server root
  */
 public class RestURL {
 	
