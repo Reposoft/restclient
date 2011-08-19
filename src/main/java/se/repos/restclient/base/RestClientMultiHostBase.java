@@ -9,8 +9,8 @@ import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 
 /**
- * Base class for clients that operate on full URLs
- * rather than resources at a predefined server root.
+ * Helper class for implementing the single host {@link RestClient} interface 
+ * using a library that operates on full URLs rather than resources at a predefined server root.
  */
 public abstract class RestClientMultiHostBase implements RestClient {
 
