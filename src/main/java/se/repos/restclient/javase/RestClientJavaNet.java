@@ -66,6 +66,9 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 			throw check(e);
 		}
 		
+		// response should be ok regardless of status, get content
+		ResponseHeaders headers = new URLConnectionResponseHeaders(conn);
+		
 		// check status code before trying to get response body
 		// to avoid the unclassified IOException
 		// TODO for some reason this seems to stop followRedirects
@@ -80,11 +83,9 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 			} finally {
 				conn.disconnect();
 			}
-			throw new HttpStatusError(conn.getResponseCode(), url, b.toString());
+			throw new HttpStatusError(url, headers, b.toString());
 		}
 		
-		// response should be ok, get content
-		ResponseHeaders headers = new URLConnectionResponseHeaders(conn);
 		OutputStream receiver = response.getResponseStream(headers);
 		try {
 			InputStream body = conn.getInputStream();

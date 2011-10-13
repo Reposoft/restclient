@@ -2,10 +2,20 @@ package se.repos.restclient.javase;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.eclipse.jetty.embedded.HelloHandler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.junit.Test;
 
+import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponseBean;
@@ -57,6 +67,60 @@ public class RestClientJavaJettyTest {
 		
 		server.stop();
 	
+	}
+	
+	/* Some actual IOExceptions that URLConnnection might throw:
+	java.net.UnknownHostException: pds-suse-svn2.pdsvision.net
+		at java.net.PlainSocketImpl.connect(PlainSocketImpl.java:177)
+		
+	java.net.ProtocolException: Server redirected too many  times (20)
+		at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1323)
+		
+	java.io.IOException: Server returned HTTP response code: 401 for URL: http://localhost/solr/svnrev/select/?q=x
+		at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1313)
+		
+	java.io.FileNotFoundException: http://localhost/solr/svnrev/select/?q=md5:6784f2036f0686c5662981c7f229679f
+		at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1311)
+		
+	java.io.IOException: Server returned HTTP response code: 500 for URL: http://localhost/solr/svnrev/select/?y
+		at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1313)
+			 */
+	
+	@Test
+	public void testGet401() throws Exception {
+		int port = 49999; // TODO random test port
+        Server server = new Server(port);
+ 
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server.setHandler(context);
+        
+        context.addServlet(new ServletHolder(new HttpServlet() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
+					throws ServletException, IOException {
+				resp.sendError(401, "Can this be custom?");
+			}
+		}), "/*");
+        
+        server.start();
+        
+        try {
+        	new RestClientJavaNet("http://localhost:" + port, null).get("/", null);
+        	fail("Expected status error");
+        } catch (HttpStatusError e) {
+        	assertEquals(401, e.getHttpStatus());
+        	ResponseHeaders headers = e.getHeaders();
+        	assertNotNull("Should contain HTTP headers sent", headers);
+        	assertTrue(headers.size() > 0);
+        	assertTrue(e.getResponse().contains("Can this be custom?")); // assuming jetty writes an error page body
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			throw new RuntimeException("Error not handled", e);
+		} finally {
+        	server.stop();
+        }
 	}
 	
 }

@@ -16,6 +16,7 @@
 package se.repos.restclient;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -27,11 +28,14 @@ public class HttpStatusErrorTest {
 
 	@Test
 	public void testHttpStatusError() throws MalformedURLException {
-		HttpStatusError e = new HttpStatusError(401, new URL("http://localhost/x/"), "<html/>");
+		ResponseHeaders headers = mock(ResponseHeaders.class);
+		when(headers.getStatus()).thenReturn(401);
+		HttpStatusError e = new HttpStatusError(new URL("http://localhost/x/"), headers, "<html/>");
 		assertTrue("Should be an IOException subclass like the other errors in java.net",
 				IOException.class.isAssignableFrom(e.getClass()));
 		assertEquals("Message should be same as from HttpURLConnection.getInputStream",
 				"Server returned HTTP response code: 401 for URL: http://localhost/x/", e.getMessage());
+		assertSame(headers, e.getHeaders());
 		assertEquals("Response should be the page body from server", "<html/>", e.getResponse());
 	}
 

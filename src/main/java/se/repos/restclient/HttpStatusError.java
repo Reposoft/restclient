@@ -29,17 +29,23 @@ public class HttpStatusError extends IOException {
 	private static final long serialVersionUID = 1L;
 	private int status;
 	private URL url;
+	private ResponseHeaders headers;
 	private String body;
 
 	/**
 	 * @param httpStatus <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html">status code</a> from the server
 	 * @param cause from the underlying http client
 	 */
-	public HttpStatusError(int httpStatus, URL url, String body) {
-		super("Server returned HTTP response code: " + httpStatus + " for URL: " + url);
-		this.status = httpStatus;
+	public HttpStatusError(URL url, ResponseHeaders headers, String body) {
+		super("Server returned HTTP response code: " + headers.getStatus() + " for URL: " + url);
+		this.status = headers.getStatus();
+		this.headers = headers;
 		this.url = url;
 		this.body = body;
+	}
+	
+	public ResponseHeaders getHeaders() {
+		return this.headers;
 	}
 
 	/**
