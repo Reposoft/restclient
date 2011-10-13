@@ -18,7 +18,18 @@ import se.repos.restclient.base.RestClientMultiHostBase;
 import se.repos.restclient.base.RestResponseWrapper;
 
 /**
- * The new name for {@link HttpGetClientJavaNet}.
+ * REST client using java.net.URLConnection.
+ * Has severe limitations:
+ * <ul>
+ * <li>Repeated HEAD requests make the client hang</li>
+ * <li>Authentication settings are static, so within a JVM
+ *  <em>there can be only one user at a time</em></li>
+ * </ul>
+ * 
+ * Might be possible to work around these limitations in a future
+ * version, but for now consider using repos-restclient-hc.
+ * <p>
+ * This implementation was previously called {@link HttpGetClientJavaNet}.
  */
 public class RestClientJavaNet extends RestClientMultiHostBase {
 
@@ -35,7 +46,10 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 	public RestClientJavaNet(String serverRootUrl, RestAuthentication auth) {
 		super(serverRootUrl);
 		if (auth != null) {
-			throw new UnsupportedOperationException("auth not supported yet");
+			throw new UnsupportedOperationException("Authentication in this implementation" +
+					" would be static due to java.net API, so only one user per JVM at a time." +
+					" Consider using RestClientHc.");
+			// We need checks that username never changes
 		}
 	}
 	
