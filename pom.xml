@@ -9,6 +9,12 @@
 	
 	<name>Repos REST client</name>
 	<url>http://www.repos.se/</url>
+	<description>
+		HTTP client implementation for using REST services.
+		Designed to be used with dependency injection.
+		Compared to java.net APIs it should be relatively easy to use and free of gotchas.
+		Compared to commons HttpClient it should be small and easy to mock in unit tests.
+	</description>
 	
 	<parent>
 		<groupId>se.repos</groupId>
