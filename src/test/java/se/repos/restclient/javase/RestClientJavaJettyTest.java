@@ -18,6 +18,7 @@ import org.junit.Test;
 import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestClient;
+import se.repos.restclient.RestResponse;
 import se.repos.restclient.RestResponseBean;
 
 
@@ -107,7 +108,8 @@ public class RestClientJavaJettyTest {
         server.start();
         
         try {
-        	new RestClientJavaNet("http://localhost:" + port, null).get("/", null);
+        	RestResponse resp = new RestResponseBean();
+        	new RestClientJavaNet("http://localhost:" + port, null).get("/", resp);
         	fail("Expected status error");
         } catch (HttpStatusError e) {
         	assertEquals(401, e.getHttpStatus());

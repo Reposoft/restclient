@@ -15,7 +15,6 @@ import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestAuthentication;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.base.RestClientMultiHostBase;
-import se.repos.restclient.base.RestResponseWrapper;
 
 /**
  * REST client using java.net.URLConnection.
@@ -54,13 +53,7 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 	}
 	
 	@Override
-	public void get(URL url, RestResponse response) throws IOException,
-			HttpStatusError {
-		get(url, new RestResponseWrapper(response){});
-	}
-	
-	void get(URL url, RestResponseWrapper response) throws IOException, HttpStatusError {
-		// TODO support Accept response
+	public void get(URL url, RestResponse response) throws IOException, HttpStatusError {
 		
 		HttpURLConnection conn;
 		try {
