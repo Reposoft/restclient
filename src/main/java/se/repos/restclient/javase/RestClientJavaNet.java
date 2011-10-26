@@ -10,6 +10,9 @@ import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestAuthentication;
@@ -42,7 +45,10 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 	
 	private int timeout = DEFAULT_CONNECT_TIMEOUT;	
 	
-	public RestClientJavaNet(String serverRootUrl, RestAuthentication auth) {
+	@Inject
+	public RestClientJavaNet(
+			@Named("config:se.repos.restclient.serverRootUrl") String serverRootUrl,
+			RestAuthentication auth) {
 		super(serverRootUrl);
 		if (auth != null) {
 			throw new UnsupportedOperationException("Authentication in this implementation" +
