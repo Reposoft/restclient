@@ -90,13 +90,7 @@ public class RestURL {
 	 * @return this instance for chaining
 	 */
 	public RestURL addQueryParameter(String paramName, String paramValueNotEncoded) {
-		String v;
-		try {
-			v = URLEncoder.encode(paramValueNotEncoded, PARAM_ENCODING);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Unexpected JVM behavior. Encoding: " + PARAM_ENCODING);
-		}
-		rest = rest + (hasQuery ? '&' : '?') + paramName + "=" + v;
+		rest = rest + (hasQuery ? '&' : '?') + paramName + "=" + urlencode(paramValueNotEncoded);
 		hasQuery = true;
 		return this;
 	}
@@ -163,6 +157,22 @@ public class RestURL {
 		return toStringPart();
 	}
 	
+	protected String urlencode(String v) {
+		try {
+			return URLEncoder.encode(v, PARAM_ENCODING).replace("+", "%20");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException("Unexpected error for static encoding " + PARAM_ENCODING, e);
+		}
+	}
+
+	protected String urldecode(String v) {
+		try {
+			return URLDecoder.decode(v, PARAM_ENCODING);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException("Unexpected error for static encoding " + PARAM_ENCODING, e);
+		}
+	}	
+	
 	/**
 	 * Parse query string. For serializing, see {@link ParamMap#toString()}.
 	 */
@@ -181,11 +191,7 @@ public class RestURL {
 			if (n < 1) {
 				throw new IllegalArgumentException("Query string part could not be parsed as key=value: " + s);
 			}
-			try {
-				p.add(s.substring(0, n), URLDecoder.decode(s.substring(n + 1), PARAM_ENCODING));
-			} catch (UnsupportedEncodingException e) {
-				throw new RuntimeException("Unexpected error for static encoding " + PARAM_ENCODING, e);
-			}
+			p.add(s.substring(0, n), urldecode(s.substring(n + 1)));
 		}
 		return p;
 	}
@@ -213,11 +219,7 @@ public class RestURL {
 					q.append("&");
 					q.append(key);
 					q.append("=");
-					try {
-						q.append(URLEncoder.encode(v, PARAM_ENCODING));
-					} catch (UnsupportedEncodingException e) {
-						throw new RuntimeException("Unexpected error for static encoding " + PARAM_ENCODING, e);
-					}
+					q.append(urlencode(v));
 				}
 			}
 			String encodedQueryString = q.substring(1);

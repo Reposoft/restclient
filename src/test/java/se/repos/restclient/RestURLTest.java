@@ -150,7 +150,12 @@ public class RestURLTest {
 	
 	@Test
 	public void testAppendSameParam() {
-		
+		RestURL url = new RestURL("/?a=b&c=d");
+		url.q("a", "e f").q("a", "3");
+		assertEquals("/?a=b&c=d&a=e%20f&a=3", url.toString());
+		Map<String, List<String>> p = url.getQuery();
+		assertEquals(2, p.size());
+		assertEquals("b,e f,3", "" + p.get("a"));
 	}
 
 }
