@@ -159,6 +159,7 @@ public class RestClientJavaJettyTest {
 		server.start();
 		
 		RestAuthentication auth = mock(RestAuthentication.class);
+		// TODO verify realm
 		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("admin");
 		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
 		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
@@ -175,6 +176,8 @@ public class RestClientJavaJettyTest {
 		assertTrue("Should have checked for authentication again instead of just sending it", 4 == authHeaders.size());
 		assertTrue("Should be different users in the two authentications", 
 				!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
+		// TODO maybe we should test for preemptive sending of auth the second time _if_ username is unchanged,
+		//  that would probably save some requests and still be thread-safe
 	}
 	
 }
