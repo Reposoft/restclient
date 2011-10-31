@@ -51,10 +51,10 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 			RestAuthentication auth) {
 		super(serverRootUrl);
 		if (auth != null) {
-			throw new UnsupportedOperationException("Authentication in this implementation" +
-					" would be static due to java.net API, so only one user per JVM at a time." +
-					" Consider using RestClientHc.");
-			// We need checks that username never changes
+			logger.warn("Authentiction enabled for java.net.URLConnection." +
+					" However, the API design allows Authenticator to be changed statically." +
+					" Also realm and server verification is not supported. Consider using RestClientHc.");
+			new JavaNetAuthenticator(auth).activate();
 		}
 	}
 	

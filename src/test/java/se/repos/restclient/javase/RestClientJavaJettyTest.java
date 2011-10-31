@@ -1,8 +1,12 @@
 package se.repos.restclient.javase;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -17,6 +21,7 @@ import org.junit.Test;
 
 import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
+import se.repos.restclient.RestAuthentication;
 import se.repos.restclient.RestClient;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.RestResponseBean;
@@ -123,6 +128,52 @@ public class RestClientJavaJettyTest {
 		} finally {
         	server.stop();
         }
+	}
+	
+	@Test
+	public void testAuthenticator() throws Exception {
+		int port = 49999; // TODO random test port		
+		
+		Server server = new Server(port);
+		   
+		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		context.setContextPath("/");
+		server.setHandler(context);
+		
+		final List<String> authHeaders = new LinkedList<String>();
+		context.addServlet(new ServletHolder(new HttpServlet() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+					throws ServletException, IOException {
+				// TODO currently testing preemtive auth,
+				//  but client should not send auth unless prompted
+				String authHeader = request.getHeader("Authorization");
+				if (authHeader == null) {
+					response.addHeader("WWW-Authenticate", "Basic realm=\"test\"");
+					response.sendError(401);
+					return;
+				}
+				authHeaders.add(authHeader);
+			}
+		}), "/*");
+		
+		server.start();
+		
+		RestAuthentication auth = mock(RestAuthentication.class);
+		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("admin");
+		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
+		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
+		
+		RestClient client = new RestClientJavaNet("http://localhost:" + port, auth);
+		
+		RestResponse response = new RestResponseBean();
+		client.get("/something", response);
+		assertEquals("Should have authenticated", 1, authHeaders.size());
+		client.get("/something", response);
+		assertEquals("Should have authenticated again", 2, authHeaders.size());
+		assertTrue("Should be different users in the two authentications", 
+				!authHeaders.get(0).equals(authHeaders.get(1)));
 	}
 	
 }
