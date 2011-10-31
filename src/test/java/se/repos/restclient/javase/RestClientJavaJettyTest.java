@@ -172,10 +172,9 @@ public class RestClientJavaJettyTest {
 		client.get("/something", response);
 		// It is OK if second request authenticates immediately, as long as the Authenticator instance is asked for credentials
 		assertTrue("Should have authenticated again", 3 <= authHeaders.size());
-		//assertTrue("Should be different users in the two authentications", 
-		//		!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
-		// Live with this for now, set auth headers manually as long term solution, see
-		// http://stackoverflow.com/questions/2138686/logging-off-with-java-net-authenticator
+		assertTrue("Should have checked for authentication again instead of just sending it", 4 == authHeaders.size());
+		assertTrue("Should be different users in the two authentications", 
+				!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
 	}
 	
 }
