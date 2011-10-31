@@ -69,11 +69,13 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 		} catch (HttpStatusError e) {
 			// Retry if prompted for BAIDC authentication, support per-request users unlike java.net.Authenticate
 			if (auth != null && e.getHttpStatus() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+				// TODO verify BASIC auth scheme
 				List<String> challenge = e.getHeaders().get("WWW-Authenticate");
 				if (challenge.size() == 0) {
 					logger.warn("Got 401 status without WWW-Authenticate header");
 					throw e;
 				}
+				// TODO verify realm
 				String username = auth.getUsername(null, null, null);
 				logger.debug("Authenticating user {} as retry for {}", username, challenge.get(0));
 				requestHeaders.put(AUTH_HEADER_NAME,
