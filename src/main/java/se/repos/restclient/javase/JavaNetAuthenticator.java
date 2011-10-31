@@ -29,8 +29,9 @@ public class JavaNetAuthenticator extends Authenticator {
 	/**
 	 * Statically enable this instance for java.net.URL connections.
 	 * We can't verify that this remains the default instance.
+	 * @deprecated Not only is the instance set statically, the returned credentials are cached per JVM and can not be reset.
 	 */
-	void activate() {
+	void activateStatic() {
 		Authenticator.setDefault(this);
 	}
 	
