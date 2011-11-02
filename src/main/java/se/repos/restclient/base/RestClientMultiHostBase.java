@@ -20,6 +20,12 @@ public abstract class RestClientMultiHostBase implements RestClient {
 	 * @param serverRootUrl protocol, domain and possibly port number, no trailing slash
 	 */
 	public RestClientMultiHostBase(String serverRootUrl) {
+		if (serverRootUrl == null) {
+			throw new IllegalArgumentException("Server root URL is required, this is a single host implementation");
+		}
+		if (serverRootUrl.length() == 0) {
+			throw new IllegalArgumentException("Server root URL can not be empty");
+		}
 		this.root = serverRootUrl;
 	}	
 	
