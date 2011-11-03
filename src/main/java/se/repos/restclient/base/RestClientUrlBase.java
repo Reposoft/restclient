@@ -13,14 +13,14 @@ import se.repos.restclient.RestResponse;
  * Helper class for implementing the single host {@link RestClient} interface 
  * using a library that operates on full URLs rather than resources at a predefined server root.
  */
-public abstract class RestClientMultiHostBase implements RestClient {
+public abstract class RestClientUrlBase implements RestClient {
 
 	private String root;
 
 	/**
 	 * @param serverRootUrl protocol, domain and possibly port number, no trailing slash
 	 */
-	public RestClientMultiHostBase(String serverRootUrl) {
+	public RestClientUrlBase(String serverRootUrl) {
 		if (serverRootUrl == null) {
 			throw new IllegalArgumentException("Server root URL is required, this is a single host implementation");
 		}

@@ -21,7 +21,7 @@ import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestAuthentication;
 import se.repos.restclient.RestResponse;
 import se.repos.restclient.base.Codecs;
-import se.repos.restclient.base.RestClientMultiHostBase;
+import se.repos.restclient.base.RestClientUrlBase;
 
 /**
  * REST client using java.net.URLConnection.
@@ -36,7 +36,7 @@ import se.repos.restclient.base.RestClientMultiHostBase;
  * <p>
  * This implementation was previously called {@link HttpGetClientJavaNet}.
  */
-public class RestClientJavaNet extends RestClientMultiHostBase {
+public class RestClientJavaNet extends RestClientUrlBase {
 
 	private static final Logger logger = LoggerFactory.getLogger(RestClientJavaNet.class);
 
