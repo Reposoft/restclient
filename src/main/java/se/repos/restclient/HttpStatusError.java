@@ -16,7 +16,6 @@
 package se.repos.restclient;
 
 import java.io.IOException;
-import java.net.URL;
 
 /**
  * Error thrown if we got a connection but the server returned a non-200 status code.
@@ -28,7 +27,7 @@ public class HttpStatusError extends IOException {
 
 	private static final long serialVersionUID = 1L;
 	private int status;
-	private URL url;
+	private String url;
 	private ResponseHeaders headers;
 	private String body;
 
@@ -36,7 +35,7 @@ public class HttpStatusError extends IOException {
 	 * @param httpStatus <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html">status code</a> from the server
 	 * @param cause from the underlying http client
 	 */
-	public HttpStatusError(URL url, ResponseHeaders headers, String body) {
+	public HttpStatusError(String url, ResponseHeaders headers, String body) {
 		super("Server returned HTTP response code: " + headers.getStatus() + " for URL: " + url);
 		this.status = headers.getStatus();
 		this.headers = headers;
@@ -58,7 +57,7 @@ public class HttpStatusError extends IOException {
 	/**
 	 * @return The URL used to make the connection
 	 */
-	public URL getUrl() {
+	public String getUrl() {
 		return this.url;
 	}
 

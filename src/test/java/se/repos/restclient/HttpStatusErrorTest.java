@@ -20,7 +20,6 @@ import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 import org.junit.Test;
 
@@ -30,7 +29,7 @@ public class HttpStatusErrorTest {
 	public void testHttpStatusError() throws MalformedURLException {
 		ResponseHeaders headers = mock(ResponseHeaders.class);
 		when(headers.getStatus()).thenReturn(401);
-		HttpStatusError e = new HttpStatusError(new URL("http://localhost/x/"), headers, "<html/>");
+		HttpStatusError e = new HttpStatusError("http://localhost/x/", headers, "<html/>");
 		assertTrue("Should be an IOException subclass like the other errors in java.net",
 				IOException.class.isAssignableFrom(e.getClass()));
 		assertEquals("Message should be same as from HttpURLConnection.getInputStream",

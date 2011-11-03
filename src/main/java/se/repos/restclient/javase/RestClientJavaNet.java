@@ -137,7 +137,7 @@ public class RestClientJavaNet extends RestClientMultiHostBase {
 			} finally {
 				conn.disconnect();
 			}
-			throw new HttpStatusError(url, headers, b.toString());
+			throw new HttpStatusError(url.toString(), headers, b.toString());
 		}
 		
 		OutputStream receiver = response.getResponseStream(headers);
