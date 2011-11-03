@@ -1,6 +1,7 @@
 package se.repos.restclient.base;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import se.repos.restclient.HttpStatusError;
@@ -26,8 +27,17 @@ public abstract class RestClientMultiHostBase implements RestClient {
 		if (serverRootUrl.length() == 0) {
 			throw new IllegalArgumentException("Server root URL can not be empty");
 		}
+		if (serverRootUrl.endsWith("/")) {
+			// Be picky as we deal with strings and URIs must start with slash according to interface
+			throw new IllegalArgumentException("Server root URL must not end with slash, got " + serverRootUrl);
+		}
+		try {
+			new URL(serverRootUrl);
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException("Invalid server root URL " + serverRootUrl, e);
+		}
 		this.root = serverRootUrl;
-	}	
+	}
 	
 	@Override
 	public void get(String uri, RestResponse response) throws IOException,
