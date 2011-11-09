@@ -12,6 +12,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,8 +111,8 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			throw check(e);
 		}
 		// authentication and some settings is static for URLConnection, preserver current setting
-		conn.setConnectTimeout(timeout);
 		conn.setInstanceFollowRedirects(true);
+		configure(conn);
 		for (String h : requestHeaders.keySet()) {
 			conn.setRequestProperty(h, requestHeaders.get(h));
 		}
@@ -130,6 +133,9 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			ByteArrayOutputStream b = new ByteArrayOutputStream();
 			try {
 				InputStream body = conn.getErrorStream();
+				if (body == null) {
+					throw new RuntimeException("Response error could not be read for status " + conn.getResponseCode());
+				}
 				pipe(body, b);
 				body.close();
 			} catch (IOException e) {
@@ -153,6 +159,31 @@ public class RestClientJavaNet extends RestClientUrlBase {
 	}
 	
 	/**
+	 * Shared configuration for all request methods.
+	 * @param conn opened but not connected
+	 */
+	protected void configure(HttpURLConnection conn) {
+		conn.setConnectTimeout(timeout);
+		if (conn instanceof HttpsURLConnection) {
+			configureSSL((HttpsURLConnection) conn);
+		}
+	}
+	
+	protected void configureSSL(HttpsURLConnection conn) {
+		if (auth == null) {
+			return;
+		}
+		URL url = conn.getURL();
+		String root = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "");
+		SSLContext ctx = auth.getSSLContext(root);
+		if (ctx == null) {
+			return;
+		}
+		SSLSocketFactory ssl = ctx.getSocketFactory();
+		conn.setSSLSocketFactory(ssl);
+	}
+
+	/**
 	 * Makes post-processing possible.
 	 */
 	protected IOException check(IOException e) {
@@ -169,6 +200,9 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		}
 	}
 
+	/**
+	 * TODO head should authenticate of auth returns credentials, getUsername should provide method name
+	 */
 	@Override
 	public ResponseHeaders head(URL url) throws IOException {	
 		HttpURLConnection con;
@@ -180,7 +214,8 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			throw check(e);
 		}
 		con.setRequestMethod("HEAD");
-		con.setConnectTimeout(timeout);
+		con.setInstanceFollowRedirects(false);
+		configure(con);
 		ResponseHeaders head = null;
 		try {
 			logger.warn("attempting HEAD request to {}", url);

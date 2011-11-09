@@ -138,14 +138,10 @@ public class RestGetClientJavaIntegrationTest {
 		server.start();
 		RestClient client = client();
 		assertEquals(200, client.head("/").getStatus());
+		RestResponseBean r2 = new RestResponseBean();
 		try {
-			client.get("/", new RestResponse() {
-				@Override
-				public OutputStream getResponseStream(ResponseHeaders headers) {
-					assertEquals(200, headers.getStatus());
-					return new ByteArrayOutputStream();
-				}
-			});
+			client.get("/", r2);
+			assertEquals(200, r2.getHeaders().getStatus());
 		} catch (HttpStatusError e) {
 			fail("GET after HEAD failed: " + e);
 		}

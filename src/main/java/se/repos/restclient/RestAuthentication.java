@@ -1,5 +1,6 @@
 package se.repos.restclient;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 public interface RestAuthentication {
@@ -24,10 +25,11 @@ public interface RestAuthentication {
 	public String getPassword(String root, String resource, String realm, String username);
 	
 	/**
-	 * Configures SSL connections.
+	 * Customizes SSLContext that can deliver {@link SSLSocketFactory} for HTTPS connections.
+	 * Called per connection so initialization should be cached.
 	 * @param root root protocol, host and possibly port number for the server to connect to
 	 * @return Custom SSL setup, null to use Java's default one
 	 */
-	public SSLSocketFactory getSSLSocketFactory(String root);
+	public SSLContext getSSLContext(String root);
 	
 }

@@ -5,7 +5,6 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import org.slf4j.Logger;
@@ -49,8 +48,8 @@ public class RestAuthenticationClientCert extends RestAuthenticationSimple {
 	}
 	
 	@Override
-	public SSLSocketFactory getSSLSocketFactory(String root) {
-		return sslContext.getSocketFactory();
+	public SSLContext getSSLContext(String root) {
+		return sslContext;
 	}
 	
 }

@@ -1,6 +1,6 @@
 package se.repos.restclient.auth;
 
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLContext;
 
 import se.repos.restclient.RestAuthentication;
 
@@ -35,7 +35,7 @@ public class RestAuthenticationSimple implements RestAuthentication {
 	}
 
 	@Override
-	public SSLSocketFactory getSSLSocketFactory(String root) {
+	public SSLContext getSSLContext(String root) {
 		return null;
 	}
 
