@@ -37,7 +37,7 @@
 		<repository>
 			<id>repos.open.repo</id>
 			<name>Repos Open Repository</name>
-			<url>http://reposserver.sourceforge.net/repo/</url>
+			<url>http://reposserver.sourceforge.net/maven/</url>
 		</repository>
 	</repositories>
 
