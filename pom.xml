@@ -43,13 +43,13 @@
 
 	<distributionManagement>
 		<repository>
-			<!-- http://reposserver.sourceforge.net/repo/ -->
+			<!-- http://reposserver.sourceforge.net/maven/ -->
 			<id>repos.open.repo</id>
 			<name>Repos Open Repository</name>
-			<url>scp://web.sourceforge.net/home/project-web/r/re/reposserver/htdocs/repo</url>
+			<url>sftp://web.sourceforge.net/home/project-web/r/re/reposserver/htdocs/maven</url>
 		</repository>
-	</distributionManagement>	
-		
+	</distributionManagement>
+	
 	<dependencies>
 		<dependency>
 		    <groupId>org.eclipse.jetty</groupId>
