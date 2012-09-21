@@ -46,6 +46,8 @@ public class RestURLTest {
 		} catch (URISyntaxException e) {
 			fail("" + e);
 		}
+		assertEquals("http://www.repos.se", u.toStringRoot());
+		assertEquals("http://www.repos.se", u.r());
 	}
 
 	@Test

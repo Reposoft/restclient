@@ -139,8 +139,23 @@ public class RestURL {
 		return root == null ? rest : root + rest;
 	}
 	
+	/**
+	 * The URL to server root
+	 * @return
+	 */
+	public String toStringRoot() {
+		return root;
+	}
+	
 	public String toStringPart() {
 		return rest;
+	}
+	
+	/**
+	 * @return same as {@link #toStringRoot()}
+	 */
+	public String r() {
+		return toStringRoot();
 	}
 	
 	/**
