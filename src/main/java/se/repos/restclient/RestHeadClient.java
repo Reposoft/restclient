@@ -20,9 +20,10 @@ import java.io.IOException;
 public interface RestHeadClient {
 
 	/**
-	 * 
-	 * @param uri
-	 * @return
+	 * Performs a HEAD request, possibly without authentication.
+	 * Note that behavior when used in combination with Repos Authproxy is not fully defined.
+	 * @param uri Resource URL from server root, encoded
+	 * @return headers, can be 401 if RestAuthentication does not provide a username
 	 * @throws IOException From the hierarchy in java.net on connection errors
 	 */
 	ResponseHeaders head(String uri) throws IOException;

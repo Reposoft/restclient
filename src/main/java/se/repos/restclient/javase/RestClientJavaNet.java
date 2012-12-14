@@ -233,7 +233,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		configure(con);
 		ResponseHeaders head = null;
 		try {
-			logger.warn("attempting HEAD request to {}", url);
+			logger.warn("attempting HEAD request with java.net client to {}", url); // still not sure if java.net client behaves well for HEAD requests
 			con.connect();
 			logger.trace("HEAD {} connected", url);
 			// gets rid of the EOF issue in Jetty test:
