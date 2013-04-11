@@ -22,6 +22,17 @@ package se.repos.restclient.base;
 public abstract class Codecs {
 
 	public static String base64encode(String decoded) {
+		// use svnkit if in classpath because it is likely also doing http requests
+		try {
+			Class<?> c = Class.forName("org.tmatesoft.svn.core.internal.util.SVNBase64");
+			if (c != null) {
+				String charset = System.getProperty("svnkit.http.encoding", "UTF-8");
+				return (String) c.getMethod("byteArrayToBase64", byte[].class).invoke(null, decoded.getBytes(charset));
+			}
+		} catch (Exception e) {
+			// continue
+		}
+		// java 1.6 default
 		try {
 			Class<?> c = Class.forName("javax.xml.bind.DatatypeConverter");
 			if (c != null) {

@@ -17,7 +17,11 @@ package se.repos.restclient.base;
 
 import static org.junit.Assert.*;
 
+import java.io.UnsupportedEncodingException;
+
 import org.junit.Test;
+import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
+import org.tmatesoft.svn.core.internal.util.SVNBase64;
 
 public class CodecsTest {
 
@@ -29,6 +33,16 @@ public class CodecsTest {
 	@Test
 	public void testBase64decode() {
 		assertEquals("apa:bepa", Codecs.base64decode("YXBhOmJlcGE="));
+	}
+	
+	@Test
+	public void testBehaveLikeSvnkit() throws UnsupportedEncodingException {
+		DAVRepositoryFactory.setup(); // not sure what would set the system property
+		String charset = System.getProperty("svnkit.http.encoding", "UTF-8");
+		
+		String auth = "nåt:lösen";
+		String byteArrayToBase64 = SVNBase64.byteArrayToBase64(auth.getBytes(charset));
+		assertEquals("Should encode non-asclii like svnkit does", byteArrayToBase64, Codecs.base64encode(auth));
 	}
 
 }
