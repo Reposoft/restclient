@@ -193,6 +193,8 @@ public class RestClientJavaJettyTest {
 				!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
 		// TODO maybe we should test for preemptive sending of auth the second time _if_ username is unchanged,
 		//  that would probably save some requests and still be thread-safe
+		
+		server.stop();
 	}
 	
 }
