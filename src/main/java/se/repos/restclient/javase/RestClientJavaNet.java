@@ -38,6 +38,7 @@ import se.repos.restclient.HttpStatusError;
 import se.repos.restclient.ResponseHeaders;
 import se.repos.restclient.RestAuthentication;
 import se.repos.restclient.RestResponse;
+import se.repos.restclient.RestResponseAccept;
 import se.repos.restclient.base.Codecs;
 import se.repos.restclient.base.RestClientUrlBase;
 
@@ -58,6 +59,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 
 	private static final Logger logger = LoggerFactory.getLogger(RestClientJavaNet.class);
 
+	public static final String ACCEPT_HEADER_NAME = "Accept"; 
 	public static final String AUTH_HEADER_NAME = "Authorization"; 
 	public static final String AUTH_HEADER_PREFIX = "Basic ";
 	
@@ -81,7 +83,11 @@ public class RestClientJavaNet extends RestClientUrlBase {
 	
 	@Override
 	public void get(URL url, RestResponse response) throws IOException, HttpStatusError {
-		Map<String,String> requestHeaders = new HashMap<String, String>(1);
+		Map<String,String> requestHeaders = new HashMap<String, String>(2);
+		if (response instanceof RestResponseAccept) {
+			requestHeaders.put(ACCEPT_HEADER_NAME, ((RestResponseAccept) response).getAccept());
+		}
+		
 		try {
 			get(url, response, requestHeaders);
 		} catch (HttpStatusError e) {
