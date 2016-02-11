@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<artifactId>restclient</artifactId>
 	<version>1.3.4</version>
 	<packaging>jar</packaging>
-	
+
 	<name>Repos REST client</name>
 	<url>http://www.repos.se/</url>
 	<description>
@@ -14,25 +14,20 @@
 		Compared to java.net APIs it should be relatively easy to use and free of gotchas.
 		Compared to commons HttpClient it should be small and easy to mock in unit tests.
 	</description>
-	
+
 	<parent>
 		<groupId>se.repos</groupId>
 		<artifactId>maven-parent</artifactId>
 		<version>2.4</version>
 	</parent>
-	
+
 	<scm>
 		<developerConnection>
-			scm:svn:https://labs.repos.se/svn/repos-restclient/trunk
+			scm:git:https://github.com/Reposoft/restclient
 		</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 
-	<issueManagement>
-		<system>Trac</system>
-		<url>https://labs.repos.se/trac/</url>
-	</issueManagement>
-	
 	<repositories>
 		<repository>
 			<id>repos.open.repo</id>
@@ -40,7 +35,7 @@
 			<url>http://reposserver.sourceforge.net/maven/</url>
 		</repository>
 	</repositories>
-	
+
 	<dependencies>
 		<dependency>
 		    <groupId>org.eclipse.jetty</groupId>
@@ -86,5 +81,5 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 </project>
