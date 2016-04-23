@@ -148,7 +148,7 @@ public class RestGetClientJavaIntegrationTest {
 		assertEquals(403, client().head("/").getStatus());
 	}	
 	
-	@Ignore("known issue for 1.0")
+
 	@Test public void testGetAfterHead() throws IOException {
 		server.start();
 		RestClient client = client();
@@ -162,13 +162,13 @@ public class RestGetClientJavaIntegrationTest {
 		}
 	}
 	
-	@Ignore("known issue for 1.0")
+
 	@Test public void testHeadRepeated() throws IOException {
 		server.start();
 		RestClient client = client();
-		assertEquals("first HEAD ", 200, client.head(server.getRoot() + "/").getStatus());
-		assertEquals("second HEAD", 200, client.head(server.getRoot() + "/").getStatus());
-		assertEquals("third HEAD ", 200, client.head(server.getRoot() + "/").getStatus());
+		assertEquals("first HEAD ", 200, client.head("/").getStatus());
+		assertEquals("second HEAD", 200, client.head("/").getStatus());
+		assertEquals("third HEAD ", 200, client.head("/").getStatus());
 	}
 	
 	@Ignore("known issue for 1.0")
