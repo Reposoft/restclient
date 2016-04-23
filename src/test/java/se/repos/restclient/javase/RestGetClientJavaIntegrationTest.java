@@ -171,27 +171,29 @@ public class RestGetClientJavaIntegrationTest {
 		assertEquals("third HEAD ", 200, client.head("/").getStatus());
 	}
 	
-	@Ignore("known issue for 1.0")
+
 	@Test public void testFollowRedirect() throws IOException {
 		server.createContext("/1").setHandler(new HttpHandler() {
 			@Override
 			public void handle(HttpExchange e) throws IOException {
-				e.sendResponseHeaders(302, 0);
 				e.getResponseHeaders().put("Location", Arrays.asList("/2"));
+				e.sendResponseHeaders(302, 0); // Must set responseheaders before sending response code.
 				e.close();
 			}
 		});
 		server.createContext("/2").setHandler(new HttpHandler() {
 			@Override
 			public void handle(HttpExchange e) throws IOException {
-				e.sendResponseHeaders(301, 0);
 				e.getResponseHeaders().put("Location", Arrays.asList("/3"));
+				e.sendResponseHeaders(301, 0);
 				e.close();
 			}
 		});
 		server.createContext("/3").setHandler(new HttpHandler() {
 			@Override
 			public void handle(HttpExchange e) throws IOException {
+				e.getResponseHeaders().set("Content-Type", "text/plain");
+				e.sendResponseHeaders(200, 0);
 				e.getResponseBody().write("yes".getBytes()); // close is not needed because stream is not wrapped
 				e.close();
 			}
