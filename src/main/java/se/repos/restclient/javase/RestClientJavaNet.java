@@ -182,7 +182,11 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			
 		} else if (responseCode < 400) { // Other non-error responses.
 			// Do we need to consume a stream if the server sends one? Important when using keep-alive?
+			// Might need to handle a category of responses where we attempt to get the Body but allow failure.
+			
 			conn.disconnect();
+			logger.warn("Unsupported HTTP response code: {}", responseCode);
+			//throw new RuntimeException("Unsupported HTTP response code: " + responseCode);
 			
 		} else { // Error stream expected for 4xx and 5xx.
 			ByteArrayOutputStream b = new ByteArrayOutputStream();
