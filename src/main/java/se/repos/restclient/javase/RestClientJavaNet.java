@@ -163,7 +163,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			} finally {
 				conn.disconnect();
 			}
-		} if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+		} else if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
 			logger.info("Server responded with redirect ({}): {}", responseCode, headers.get("Location"));
 			ByteArrayOutputStream b = new ByteArrayOutputStream();
 			try {
