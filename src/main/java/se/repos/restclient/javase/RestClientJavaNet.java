@@ -146,11 +146,45 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		
 		// response should be ok regardless of status, get content
 		ResponseHeaders headers = new URLConnectionResponseHeaders(conn);
+		int responseCode = conn.getResponseCode();
 		
 		// check status code before trying to get response body
 		// to avoid the unclassified IOException
-		// TODO for some reason this seems to stop followRedirects
-		if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+		// Currently getting body only for 200 OK. 
+		// There might be more 2xx responses with a valuable body.
+		if (responseCode == HttpURLConnection.HTTP_OK) {
+			OutputStream receiver = response.getResponseStream(headers);
+			try {
+				InputStream body = conn.getInputStream();
+				pipe(body, receiver);
+				body.close();
+			} catch (IOException e) {
+				throw check(e);
+			} finally {
+				conn.disconnect();
+			}
+		} if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+			logger.info("Server responded with redirect ({}): {}", responseCode, headers.get("Location"));
+			ByteArrayOutputStream b = new ByteArrayOutputStream();
+			try {
+				InputStream body = conn.getInputStream();
+				if (body == null) {
+					logger.warn("Redirect did not contain a body.");
+				}
+				pipe(body, b);
+				body.close();
+			} catch (IOException e) {
+				throw check(e);
+			} finally {
+				conn.disconnect();
+			}
+			throw new HttpStatusError(url.toString(), headers, b.toString());
+			
+		} else if (responseCode < 400) { // Other non-error responses.
+			// Do we need to consume a stream if the server sends one? Important when using keep-alive?
+			conn.disconnect();
+			
+		} else { // Error stream expected for 4xx and 5xx.
 			ByteArrayOutputStream b = new ByteArrayOutputStream();
 			try {
 				InputStream body = conn.getErrorStream();
@@ -165,18 +199,9 @@ public class RestClientJavaNet extends RestClientUrlBase {
 				conn.disconnect();
 			}
 			throw new HttpStatusError(url.toString(), headers, b.toString());
-		}
+		} 
 		
-		OutputStream receiver = response.getResponseStream(headers);
-		try {
-			InputStream body = conn.getInputStream();
-			pipe(body, receiver);
-			body.close();
-		} catch (IOException e) {
-			throw check(e);
-		} finally {
-			conn.disconnect();
-		}
+		
 	}
 	
 	/**
