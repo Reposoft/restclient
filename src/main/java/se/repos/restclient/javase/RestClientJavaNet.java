@@ -102,9 +102,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 				// TODO verify realm
 				String username = auth.getUsername(null, null, null);
 				logger.debug("Authenticating user {} as retry for {}", username, challenge.get(0));
-				requestHeaders.put(AUTH_HEADER_NAME,
-						AUTH_HEADER_PREFIX + Codecs.base64encode(
-								username + ":" + auth.getPassword(null, null, null, username)));
+				setAuthHeaderBasic(requestHeaders);
 				get(url, response, requestHeaders);
 			} else {
 				// Not authentication, throw the error
@@ -206,6 +204,14 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		} 
 		
 		
+	}
+	
+	private void setAuthHeaderBasic(Map<String, String> requestHeaders) {
+		
+		String username = auth.getUsername(null, null, null);
+		requestHeaders.put(AUTH_HEADER_NAME,
+				AUTH_HEADER_PREFIX + Codecs.base64encode(
+						username + ":" + auth.getPassword(null, null, null, username)));
 	}
 	
 	/**
