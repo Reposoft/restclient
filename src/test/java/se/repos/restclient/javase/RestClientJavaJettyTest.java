@@ -200,6 +200,51 @@ public class RestClientJavaJettyTest {
 				!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
 		// TODO maybe we should test for preemptive sending of auth the second time _if_ username is unchanged,
 		//  that would probably save some requests and still be thread-safe
+		// Not sure why username should be unchanged.
+		// Implemented the less complex approach to setAuthenticationForced when it is known that the server requires auth.
+	}
+	
+	@Test
+	public void testAuthenticatorForced() throws Exception {
+		   
+		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		context.setContextPath("/");
+		server.setHandler(context);
+		
+		final List<String> authHeaders = new LinkedList<String>();
+		context.addServlet(new ServletHolder(new HttpServlet() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+					throws ServletException, IOException {
+				String authHeader = request.getHeader("Authorization");
+				authHeaders.add(authHeader);
+				if (authHeader == null) {
+					response.addHeader("WWW-Authenticate", "Basic realm=\"test\"");
+					response.sendError(401);
+					return;
+				}
+			}
+		}), "/*");
+		
+		server.start();
+		
+		RestAuthentication auth = mock(RestAuthentication.class);
+		// TODO verify realm
+		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("admin");
+		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
+		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
+		
+		RestClient client = new RestClientJavaNet("http://localhost:" + port, auth);
+		((RestClientJavaNet) client).setAuthenticationForced(true);
+		
+		RestResponse response = new RestResponseBean();
+		client.get("/something", response);
+		assertNotNull("First request should have credentials", authHeaders.get(0));
+		client.get("/something", response);
+		assertEquals("Should have authenticated again", 2, authHeaders.size());
+		assertTrue("Should be different users in the two authentications", 
+				!authHeaders.get(0).equals(authHeaders.get(1)));
 		
 	}
 	
