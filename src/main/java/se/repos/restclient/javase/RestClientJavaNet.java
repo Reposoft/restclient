@@ -72,6 +72,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 	private int timeout = DEFAULT_CONNECT_TIMEOUT;
 
 	private RestAuthentication auth;
+	private boolean authenticationForced = false;
 	
 	@Inject
 	public RestClientJavaNet(
@@ -89,6 +90,14 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		}
 		
 		try {
+			// There are 2 approaches to making BASIC Auth efficient:
+			// - Remembering that Auth was needed after the first request. Per path? Per user?
+			// - Indicating to the implementation to always send auth. Inherently per host unless multiple Restclient instances are created. 
+			if (auth != null && authenticationForced) {
+				String username = auth.getUsername(null, null, null);
+				logger.debug("Authenticating user {}, forced", username);
+				setAuthHeaderBasic(requestHeaders, username, auth.getPassword(null, null, null, username));
+			}
 			get(url, response, requestHeaders);
 		} catch (HttpStatusError e) {
 			// Retry if prompted for BAIDC authentication, support per-request users unlike java.net.Authenticate
@@ -102,9 +111,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 				// TODO verify realm
 				String username = auth.getUsername(null, null, null);
 				logger.debug("Authenticating user {} as retry for {}", username, challenge.get(0));
-				requestHeaders.put(AUTH_HEADER_NAME,
-						AUTH_HEADER_PREFIX + Codecs.base64encode(
-								username + ":" + auth.getPassword(null, null, null, username)));
+				setAuthHeaderBasic(requestHeaders, username, auth.getPassword(null, null, null, username));
 				get(url, response, requestHeaders);
 			} else {
 				// Not authentication, throw the error
@@ -208,6 +215,29 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		
 	}
 	
+	private static void setAuthHeaderBasic(Map<String, String> requestHeaders, String username, String password) {
+		
+		requestHeaders.put(AUTH_HEADER_NAME,
+				AUTH_HEADER_PREFIX + Codecs.base64encode(
+						username + ":" + password));
+	}
+	
+	public boolean isAuthenticationForced() {
+		return authenticationForced;
+	}
+
+	/**
+	 * Makes the http client send authentication in the initial request without first getting a 401.
+	 * TODO: Consider making this an inject settor.
+	 * @param authenticationForced
+	 */
+	public void setAuthenticationForced(boolean authenticationForced) {
+		if (authenticationForced && auth == null) {
+			throw new IllegalArgumentException("Authentication forced assumes an authentication instance is provided.");
+		}
+		this.authenticationForced = authenticationForced;
+	}
+
 	/**
 	 * Shared configuration for all request methods.
 	 * @param conn opened but not connected

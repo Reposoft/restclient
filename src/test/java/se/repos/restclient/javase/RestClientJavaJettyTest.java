@@ -32,6 +32,8 @@ import org.eclipse.jetty.embedded.HelloHandler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import se.repos.restclient.HttpStatusError;
@@ -44,8 +46,22 @@ import se.repos.restclient.RestResponseBean;
 
 public class RestClientJavaJettyTest {
 
-	@Test public void testGet() throws Exception {
-		Server server = new Server(49999); // TOOD random retry like UnitHttpServer
+	int port = 49999; // TODO random test port
+	private Server server;
+	
+	@Before
+	public void setUp() throws Exception {
+        server = new Server(port); // TODO random retry like UnitHttpServer
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		server.stop();
+	}
+	
+	
+	@Test 
+	public void testGet() throws Exception { 
 //		Server server = new Server();
 //		
 //        SelectChannelConnector c1 = new SelectChannelConnector();
@@ -85,9 +101,7 @@ public class RestClientJavaJettyTest {
 		RestResponseBean r2 = new RestResponseBean();
 		client.get("/whatever2", r2);
 		assertEquals("text/html;charset=UTF-8", r2.getHeaders().getContentType());
-		
-		server.stop();
-	
+			
 	}
 	
 	/* Some actual IOExceptions that URLConnnection might throw:
@@ -109,8 +123,6 @@ public class RestClientJavaJettyTest {
 	
 	@Test
 	public void testGet401() throws Exception {
-		int port = 49999; // TODO random test port
-        Server server = new Server(port);
  
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
@@ -140,16 +152,11 @@ public class RestClientJavaJettyTest {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			throw new RuntimeException("Error not handled", e);
-		} finally {
-        	server.stop();
-        }
+		} 
 	}
 	
 	@Test
 	public void testAuthenticator() throws Exception {
-		int port = 49999; // TODO random test port		
-		
-		Server server = new Server(port);
 		   
 		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		context.setContextPath("/");
@@ -193,8 +200,52 @@ public class RestClientJavaJettyTest {
 				!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
 		// TODO maybe we should test for preemptive sending of auth the second time _if_ username is unchanged,
 		//  that would probably save some requests and still be thread-safe
+		// Not sure why username should be unchanged.
+		// Implemented the less complex approach to setAuthenticationForced when it is known that the server requires auth.
+	}
+	
+	@Test
+	public void testAuthenticatorForced() throws Exception {
+		   
+		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		context.setContextPath("/");
+		server.setHandler(context);
 		
-		server.stop();
+		final List<String> authHeaders = new LinkedList<String>();
+		context.addServlet(new ServletHolder(new HttpServlet() {
+			private static final long serialVersionUID = 1L;
+			@Override
+			protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+					throws ServletException, IOException {
+				String authHeader = request.getHeader("Authorization");
+				authHeaders.add(authHeader);
+				if (authHeader == null) {
+					response.addHeader("WWW-Authenticate", "Basic realm=\"test\"");
+					response.sendError(401);
+					return;
+				}
+			}
+		}), "/*");
+		
+		server.start();
+		
+		RestAuthentication auth = mock(RestAuthentication.class);
+		// TODO verify realm
+		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("admin");
+		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
+		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
+		
+		RestClient client = new RestClientJavaNet("http://localhost:" + port, auth);
+		((RestClientJavaNet) client).setAuthenticationForced(true);
+		
+		RestResponse response = new RestResponseBean();
+		client.get("/something", response);
+		assertNotNull("First request should have credentials", authHeaders.get(0));
+		client.get("/something", response);
+		assertEquals("Should have authenticated again", 2, authHeaders.size());
+		assertTrue("Should be different users in the two authentications", 
+				!authHeaders.get(0).equals(authHeaders.get(1)));
+		
 	}
 	
 }
