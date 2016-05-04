@@ -70,7 +70,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 	public static final int DEFAULT_CONNECT_TIMEOUT = 5000;
 	
 	private int timeout = DEFAULT_CONNECT_TIMEOUT;
-	private boolean keepalive = false;
+	public boolean keepalive = false;
 
 	private RestAuthentication auth;
 	private boolean authenticationForced = false;
