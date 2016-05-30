@@ -70,6 +70,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 	public static final int DEFAULT_CONNECT_TIMEOUT = 5000;
 	
 	private int timeout = DEFAULT_CONNECT_TIMEOUT;
+	public boolean keepalive = false;
 
 	private RestAuthentication auth;
 	private boolean authenticationForced = false;
@@ -161,16 +162,19 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		// There might be more 2xx responses with a valuable body.
 		if (responseCode == HttpURLConnection.HTTP_OK) {
 			OutputStream receiver = response.getResponseStream(headers);
+			boolean disconnect = true;
 			try {
 				InputStream body = conn.getInputStream();
 				pipe(body, receiver);
 				body.close();
+				disconnect = false;
 			} catch (IOException e) {
 				throw check(e);
 			} finally {
-				conn.disconnect();
+				disconnect(conn, disconnect); // potential keepalive if body processing went well.
 			}
 		} else if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+			// redirect within the same protocol will be handled transparently, typically ending up here when redirected btw http/https
 			logger.info("Server responded with redirect ({}): {}", responseCode, headers.get("Location"));
 			ByteArrayOutputStream b = new ByteArrayOutputStream();
 			try {
@@ -183,7 +187,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			} catch (IOException e) {
 				throw check(e);
 			} finally {
-				conn.disconnect();
+				disconnect(conn, true); // forcing disconnect, will likely retry on HTTPS instead
 			}
 			throw new HttpStatusError(url.toString(), headers, b.toString());
 			
@@ -191,7 +195,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			// Do we need to consume a stream if the server sends one? Important when using keep-alive?
 			// Might need to handle a category of responses where we attempt to get the Body but allow failure.
 			
-			conn.disconnect();
+			disconnect(conn, true); // forcing disconnect, need better management of body.
 			logger.warn("Unsupported HTTP response code: {}", responseCode);
 			//throw new RuntimeException("Unsupported HTTP response code: " + responseCode);
 			
@@ -207,7 +211,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			} catch (IOException e) {
 				throw check(e);
 			} finally {
-				conn.disconnect();
+				disconnect(conn, true); // forcing disconnect at this time, consider enabling keepalive in the future
 			}
 			throw new HttpStatusError(url.toString(), headers, b.toString());
 		} 
@@ -277,6 +281,14 @@ public class RestClientJavaNet extends RestClientUrlBase {
 		while (len != -1) {
 		    destination.write(buffer, 0, len);
 		    len = source.read(buffer);
+		}
+	}
+	
+	private void disconnect(HttpURLConnection conn, boolean force) {
+		
+		// Can perform close or disconnect based on configuration.
+		if (force || (!this.keepalive)) {
+			conn.disconnect();
 		}
 	}
 
