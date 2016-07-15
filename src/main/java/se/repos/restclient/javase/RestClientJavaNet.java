@@ -70,10 +70,10 @@ public class RestClientJavaNet extends RestClientUrlBase {
 	public static final int DEFAULT_CONNECT_TIMEOUT = 5000;
 	
 	private int timeout = DEFAULT_CONNECT_TIMEOUT;
-	public boolean keepalive = false;
 
 	private RestAuthentication auth;
 	private boolean authenticationForced = false;
+	private boolean keepalive = false;
 	
 	@Inject
 	public RestClientJavaNet(
@@ -240,6 +240,14 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			throw new IllegalArgumentException("Authentication forced assumes an authentication instance is provided.");
 		}
 		this.authenticationForced = authenticationForced;
+	}
+	
+	/**
+	 * Makes the http client allow keepalive between requests.
+	 * @param keepalive
+	 */
+	public void setKeepalive(boolean keepalive) {
+		this.keepalive = keepalive;
 	}
 
 	/**
