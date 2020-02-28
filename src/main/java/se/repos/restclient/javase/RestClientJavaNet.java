@@ -94,7 +94,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			// There are 2 approaches to making BASIC Auth efficient:
 			// - Remembering that Auth was needed after the first request. Per path? Per user?
 			// - Indicating to the implementation to always send auth. Inherently per host unless multiple Restclient instances are created. 
-			if (auth != null && authenticationForced) {
+			if (isAuthBasic() && authenticationForced) {
 				String username = auth.getUsername(null, null, null);
 				logger.debug("Authenticating user {}, forced", username);
 				setAuthHeaderBasic(requestHeaders, username, auth.getPassword(null, null, null, username));
@@ -102,7 +102,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			get(url, response, requestHeaders);
 		} catch (HttpStatusError e) {
 			// Retry if prompted for BAIDC authentication, support per-request users unlike java.net.Authenticate
-			if (auth != null && e.getHttpStatus() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+			if (isAuthBasic() && e.getHttpStatus() == HttpURLConnection.HTTP_UNAUTHORIZED) {
 				// TODO verify BASIC auth scheme
 				List<String> challenge = e.getHeaders().get("WWW-Authenticate");
 				if (challenge.size() == 0) {
@@ -339,6 +339,14 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			con.disconnect();
 		}
 		return head;
+	}
+	
+	private boolean isAuthBasic() {
+		
+		if (auth != null && auth.getUsername(null, null, null) != null) {
+			return true;
+		}
+		return false;
 	}
 	
 }
