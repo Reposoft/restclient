@@ -94,7 +94,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 			// There are 2 approaches to making BASIC Auth efficient:
 			// - Remembering that Auth was needed after the first request. Per path? Per user?
 			// - Indicating to the implementation to always send auth. Inherently per host unless multiple Restclient instances are created. 
-			if (isAuthBasic() && authenticationForced) {
+			if (authenticationForced && isAuthBasic()) {
 				String username = auth.getUsername(null, null, null);
 				logger.debug("Authenticating user {}, forced", username);
 				setAuthHeaderBasic(requestHeaders, username, auth.getPassword(null, null, null, username));

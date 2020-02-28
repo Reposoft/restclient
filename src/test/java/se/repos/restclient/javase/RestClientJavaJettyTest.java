@@ -182,7 +182,7 @@ public class RestClientJavaJettyTest {
 		
 		RestAuthentication auth = mock(RestAuthentication.class);
 		// TODO verify realm
-		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("admin");
+		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("demo").thenReturn("admin").thenReturn("admin");
 		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
 		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
 		
@@ -231,7 +231,7 @@ public class RestClientJavaJettyTest {
 		
 		RestAuthentication auth = mock(RestAuthentication.class);
 		// TODO verify realm
-		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("admin");
+		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("demo").thenReturn("admin").thenReturn("admin");
 		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
 		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
 		
