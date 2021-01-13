@@ -38,6 +38,8 @@ public class RestAuthenticationClientCert extends RestAuthenticationSimple {
 	private TrustManager trustManager;
 	private KeyManager keyManager;
 	private SSLContext sslContext;
+	
+	private static String sslProtocol = "TLS";
 
 	public RestAuthenticationClientCert(
 			TrustManager trustManager, KeyManager keyManager,
@@ -51,7 +53,8 @@ public class RestAuthenticationClientCert extends RestAuthenticationSimple {
 	private void configure() throws KeyManagementException {
 		SSLContext ctx;
 		try {
-			ctx = SSLContext.getInstance("TLS");
+			logger.debug("Initializing SSL context with SSL protocol: {}", sslProtocol);
+			ctx = SSLContext.getInstance(sslProtocol);
 		} catch (NoSuchAlgorithmException e) {
 			throw new RuntimeException("Java SSL initialization error", e);
 		}
@@ -67,4 +70,7 @@ public class RestAuthenticationClientCert extends RestAuthenticationSimple {
 		return sslContext;
 	}
 	
+	public static void setSSLProtocol(String sslProtocol) {
+		RestAuthenticationClientCert.sslProtocol = sslProtocol;
+	}
 }
