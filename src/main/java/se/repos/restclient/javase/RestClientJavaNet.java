@@ -167,6 +167,7 @@ public class RestClientJavaNet extends RestClientUrlBase {
 				InputStream body = conn.getInputStream();
 				pipe(body, receiver);
 				body.close();
+				receiver.close();
 				disconnect = false;
 			} catch (IOException e) {
 				throw check(e);
