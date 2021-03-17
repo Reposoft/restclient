@@ -167,7 +167,9 @@ public class RestClientJavaNet extends RestClientUrlBase {
 				InputStream body = conn.getInputStream();
 				pipe(body, receiver);
 				body.close();
-				receiver.close();
+				// Should NOT close the receiver, must be handled by calling class.
+				// See HttpClient BasicHttpEntity.writeTo(..) for consistency btw http clients.
+				//receiver.close();
 				disconnect = false;
 			} catch (IOException e) {
 				throw check(e);
