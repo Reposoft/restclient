@@ -15,66 +15,21 @@
  */
 package se.repos.restclient.base;
 
+import java.util.Base64;
+
 /**
  * Encode and decode strings to base64 without external libraries.
- * Works in most Java6 environments and falls back to commons-codec if not.
+ * Uses Java 8+ Base64 class.
  */
 public abstract class Codecs {
 
 	public static String base64encode(String decoded) {
-		// use svnkit if in classpath because it is likely also doing http requests
-		try {
-			Class<?> c = Class.forName("org.tmatesoft.svn.core.internal.util.SVNBase64");
-			if (c != null) {
-				String charset = System.getProperty("svnkit.http.encoding", "UTF-8");
-				return (String) c.getMethod("byteArrayToBase64", byte[].class).invoke(null, decoded.getBytes(charset));
-			}
-		} catch (Exception e) {
-			// continue
-		}
-		// java 1.6 default
-		try {
-			Class<?> c = Class.forName("javax.xml.bind.DatatypeConverter");
-			if (c != null) {
-				return (String) c.getMethod("printBase64Binary", byte[].class).invoke(null, decoded.getBytes());
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			// continue
-		}
-		// We'll probably end up here in java < 1.6
-		try {
-			Class<?> c = Class.forName("org.apache.commons.codec.binary.Base64");
-			if (c != null) {
-				return (String) c.getMethod("encodeBase64", byte[].class).invoke(null, decoded.getBytes());
-			}
-		} catch (Exception e2) {
-			// continue
-		}
-		throw new RuntimeException("Failed to find a base64 encoder. Try adding commons-codec lib.");
+		return Base64.getEncoder().encodeToString(decoded.getBytes());
 	}
 	
 	public static String base64decode(String encoded) {
-		try {
-			Class<?> c = Class.forName("javax.xml.bind.DatatypeConverter");
-			if (c != null) {
-				byte[] b = (byte[]) c.getMethod("parseBase64Binary", String.class).invoke(null, encoded);
-				return new String(b);
-			}
-		} catch (Exception e) {
-			// continue
-		}
-		// We'll probably end up here in java < 1.6
-		try {
-			Class<?> c = Class.forName("org.apache.commons.codec.binary.Base64");
-			if (c != null) {
-				byte[] b = (byte[]) c.getMethod("decodeBase64", String.class).invoke(null, encoded);
-				return new String(b);
-			}
-		} catch (Exception e2) {
-			// continue
-		}
-		throw new RuntimeException("Failed to find a base64 decoder. Try adding commons-codec lib.");
+		byte[] b = Base64.getDecoder().decode(encoded);
+		return new String(b);
 	}
 	
 }
