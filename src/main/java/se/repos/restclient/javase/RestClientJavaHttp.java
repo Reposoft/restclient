@@ -28,14 +28,11 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -259,13 +256,7 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	}
 
 	private void pipe(InputStream source, OutputStream destination) throws IOException {
-		// don't know if this is a good buffering strategy
-		byte[] buffer = new byte[1024];
-		int len = source.read(buffer);
-		while (len != -1) {
-		    destination.write(buffer, 0, len);
-		    len = source.read(buffer);
-		}
+		source.transferTo(destination);
 	}
 	
 
