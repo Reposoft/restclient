@@ -78,7 +78,7 @@ public class RestClientJavaJettyTest {
 		server.start();
 		//wait until server closed://server.join();
 		
-		RestClient client = new RestClientJavaNet("http://127.0.0.1:49999", null);
+		RestClient client = new RestClientJavaHttp("http://127.0.0.1:49999", null);
 		
 		RestResponseBean r1 = new RestResponseBean();
 		client.get("/", r1);
@@ -141,7 +141,7 @@ public class RestClientJavaJettyTest {
         
         try {
         	RestResponse resp = new RestResponseBean();
-        	new RestClientJavaNet("http://localhost:" + port, null).get("/", resp);
+        	new RestClientJavaHttp("http://localhost:" + port, null).get("/", resp);
         	fail("Expected status error");
         } catch (HttpStatusError e) {
         	assertEquals(401, e.getHttpStatus());
@@ -155,54 +155,6 @@ public class RestClientJavaJettyTest {
 		} 
 	}
 	
-	@Test
-	public void testAuthenticator() throws Exception {
-		   
-		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		context.setContextPath("/");
-		server.setHandler(context);
-		
-		final List<String> authHeaders = new LinkedList<String>();
-		context.addServlet(new ServletHolder(new HttpServlet() {
-			private static final long serialVersionUID = 1L;
-			@Override
-			protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-					throws ServletException, IOException {
-				String authHeader = request.getHeader("Authorization");
-				authHeaders.add(authHeader);
-				if (authHeader == null) {
-					response.addHeader("WWW-Authenticate", "Basic realm=\"test\"");
-					response.sendError(401);
-					return;
-				}
-			}
-		}), "/*");
-		
-		server.start();
-		
-		RestAuthentication auth = mock(RestAuthentication.class);
-		// TODO verify realm
-		when(auth.getUsername(null, null, null)).thenReturn("demo").thenReturn("demo").thenReturn("admin").thenReturn("admin");
-		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
-		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
-		
-		RestClient client = new RestClientJavaNet("http://localhost:" + port, auth);
-		
-		RestResponse response = new RestResponseBean();
-		client.get("/something", response);
-		assertEquals("First request should be without credentials", null, authHeaders.get(0));
-		assertEquals("Should have authenticated", 2, authHeaders.size());
-		client.get("/something", response);
-		// It is OK if second request authenticates immediately, as long as the Authenticator instance is asked for credentials
-		assertTrue("Should have authenticated again", 3 <= authHeaders.size());
-		assertTrue("Should have checked for authentication again instead of just sending it", 4 == authHeaders.size());
-		assertTrue("Should be different users in the two authentications", 
-				!authHeaders.get(1).equals(authHeaders.get(authHeaders.size() - 1)));
-		// TODO maybe we should test for preemptive sending of auth the second time _if_ username is unchanged,
-		//  that would probably save some requests and still be thread-safe
-		// Not sure why username should be unchanged.
-		// Implemented the less complex approach to setAuthenticationForced when it is known that the server requires auth.
-	}
 	
 	@Test
 	public void testAuthenticatorForced() throws Exception {
@@ -220,8 +172,7 @@ public class RestClientJavaJettyTest {
 				String authHeader = request.getHeader("Authorization");
 				authHeaders.add(authHeader);
 				if (authHeader == null) {
-					response.addHeader("WWW-Authenticate", "Basic realm=\"test\"");
-					response.sendError(401);
+					response.sendError(403);
 					return;
 				}
 			}
@@ -235,12 +186,13 @@ public class RestClientJavaJettyTest {
 		when(auth.getPassword(null, null, null, "demo")).thenReturn("pdemo");
 		when(auth.getPassword(null, null, null, "admin")).thenReturn("padmin");
 		
-		RestClient client = new RestClientJavaNet("http://localhost:" + port, auth);
-		((RestClientJavaNet) client).setAuthenticationForced(true);
+		RestClient client = new RestClientJavaHttp("http://localhost:" + port, auth);
+		((RestClientJavaHttp) client).setAuthenticationForced(true);
 		
 		RestResponse response = new RestResponseBean();
 		client.get("/something", response);
 		assertNotNull("First request should have credentials", authHeaders.get(0));
+		//assertEquals("", authHeaders.get(0));
 		client.get("/something", response);
 		assertEquals("Should have authenticated again", 2, authHeaders.size());
 		assertTrue("Should be different users in the two authentications", 

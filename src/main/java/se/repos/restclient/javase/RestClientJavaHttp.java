@@ -20,7 +20,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +50,11 @@ import se.repos.restclient.base.RestClientUrlBase;
 
 /**
  * REST client using java.net.http introduced in Java 11.
+ * 
+ * Always using Keep-Alive, no configuration.
+ * Basic Authentication is forced if the RestAuthentication provides a username (no retry on 401).
+ * Default proxy config.
+ * Default CookieManager.
  */
 public class RestClientJavaHttp extends RestClientUrlBase {
 
@@ -58,12 +69,17 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	 * Default: {@value #DEFAULT_CONNECT_TIMEOUT}.
 	 */
 	public static final int DEFAULT_CONNECT_TIMEOUT = 5000;
+	// No method for setting connect timeout per-request, only the total timeout.
+	// https://bugs.openjdk.java.net/browse/JDK-8209075
+	// TODO: Consider method for setting timeout, need to rebuild the clients.
 	
-	private int timeout = DEFAULT_CONNECT_TIMEOUT;
 
 	private RestAuthentication auth;
-	private boolean authenticationForced = false;
-	private boolean keepalive = false;
+	private boolean authenticationForced = true;
+	
+	private HttpClient clientRedirectNormal;
+	private HttpClient clientRedirectNever;
+	
 	
 	@Inject
 	public RestClientJavaHttp(
@@ -71,8 +87,26 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 			RestAuthentication auth) {
 		super(serverRootUrl);
 		this.auth = auth;
+		
+		HttpClient.Builder builderRedirectNormal = HttpClient.newBuilder()
+				.connectTimeout(Duration.ofMillis(DEFAULT_CONNECT_TIMEOUT))
+				.followRedirects(HttpClient.Redirect.NORMAL);
+		
+		HttpClient.Builder builderRedirectNever = HttpClient.newBuilder()
+				.connectTimeout(Duration.ofMillis(DEFAULT_CONNECT_TIMEOUT))
+				.followRedirects(HttpClient.Redirect.NEVER);
+
+		SSLContext sslContext = (auth == null) ? null : auth.getSSLContext(serverRootUrl);
+		if (sslContext != null) {
+			builderRedirectNormal.sslContext(sslContext);
+			builderRedirectNever.sslContext(sslContext);
+		}
+		this.clientRedirectNormal = builderRedirectNormal.build();
+		this.clientRedirectNever = builderRedirectNever.build();
 	}
 	
+	
+	// Public API, performs BASIC authentication if RestAuthentication has username.
 	@Override
 	public void get(URL url, RestResponse response) throws IOException, HttpStatusError {
 		Map<String,String> requestHeaders = new HashMap<String, String>(2);
@@ -91,23 +125,8 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 			}
 			get(url, response, requestHeaders);
 		} catch (HttpStatusError e) {
-			// Retry if prompted for BAIDC authentication, support per-request users unlike java.net.Authenticate
-			if (isAuthBasic() && e.getHttpStatus() == HttpURLConnection.HTTP_UNAUTHORIZED) {
-				// TODO verify BASIC auth scheme
-				List<String> challenge = e.getHeaders().get("WWW-Authenticate");
-				if (challenge.size() == 0) {
-					logger.warn("Got 401 status without WWW-Authenticate header");
-					throw e;
-				}
-				// TODO verify realm
-				String username = auth.getUsername(null, null, null);
-				logger.debug("Authenticating user {} as retry for {}", username, challenge.get(0));
-				setAuthHeaderBasic(requestHeaders, username, auth.getPassword(null, null, null, username));
-				get(url, response, requestHeaders);
-			} else {
-				// Not authentication, throw the error
-				throw e;
-			}
+			// No longer support BASIC auth following 401, using forced auth instead.
+			throw e;
 		}
 	}
 	
@@ -116,101 +135,96 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	 * @param url
 	 * @param response Will only be written to after status 200 is received,
 	 *  see {@link HttpStatusError#getResponse()} for error body.
-	 * @param requestHeaders Can be used for authentication, as the default Authenticator behavior is static
+	 * @param requestHeaders Can be used for authentication, no BASIC authentication performed by this method 
 	 * @throws IOException
 	 * @throws HttpStatusError
 	 */
-	public void get(URL url, RestResponse response, Map<String,String> requestHeaders) throws IOException, HttpStatusError {
-		HttpURLConnection conn;
+	public void get(URL url, RestResponse restResponse, Map<String,String> requestHeaders) throws IOException, HttpStatusError {
+		HttpResponse<InputStream> response;
 		try {
-			conn = (HttpURLConnection) url.openConnection();
-		} catch (ClassCastException e) {
+			HttpRequest.Builder builder = HttpRequest.newBuilder()
+					.uri(url.toURI())
+					.GET();
+
+			for (String h : requestHeaders.keySet()) {
+				builder.header(h, requestHeaders.get(h));
+			}
+			
+			logger.debug("GET connection to: {}", url);
+			response = clientRedirectNormal.send(builder.build(), BodyHandlers.ofInputStream());
+			
+			// response should be ok regardless of status
+			ResponseHeaders headers = new ResponseHeadersJavaHttp(response);
+			int responseCode = response.statusCode();
+		
+			// NOTE these comments are from original JavaNet implementation (before Java 11 http
+			// check status code before trying to get response body
+			// to avoid the unclassified IOException
+			// Currently getting body only for 200 OK. 
+			// There might be more 2xx responses with a valuable body.
+			if (responseCode == HttpURLConnection.HTTP_OK) {
+				OutputStream receiver = restResponse.getResponseStream(headers);
+				try {
+					InputStream body = response.body();
+					pipe(body, receiver);
+					body.close();
+					// Should NOT close the receiver, must be handled by calling class.
+					// See HttpClient BasicHttpEntity.writeTo(..) for consistency btw http clients.
+					//receiver.close();
+				} catch (IOException e) {
+					throw check(e);
+				}
+			} else if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+				// redirect within the same protocol will be handled transparently, typically ending up here when redirected btw http/https
+				logger.info("Server responded with redirect ({}): {}", responseCode, headers.get("Location"));
+				ByteArrayOutputStream b = new ByteArrayOutputStream();
+				try {
+					InputStream body = response.body();
+					if (body == null) {
+						logger.warn("Redirect did not contain a body.");
+					}
+					pipe(body, b);
+					body.close();
+				} catch (IOException e) {
+					throw check(e);
+				}
+				throw new HttpStatusError(url.toString(), headers, b.toString());
+				
+			} else if (responseCode < 400) { // Other non-error responses.
+				// Do we need to consume a stream if the server sends one? Important when using keep-alive?
+				// Might need to handle a category of responses where we attempt to get the Body but allow failure.
+				
+				logger.warn("Unsupported HTTP response code: {}", responseCode);
+				//throw new RuntimeException("Unsupported HTTP response code: " + responseCode);
+				
+			} else { // Error stream expected for 4xx and 5xx.
+				ByteArrayOutputStream b = new ByteArrayOutputStream();
+				try {
+					InputStream body = response.body();
+					if (body == null) {
+						throw new RuntimeException("Response error could not be read for status " + responseCode);
+					}
+					pipe(body, b);
+					body.close();
+				} catch (IOException e) {
+					throw check(e);
+				}
+				throw new HttpStatusError(url.toString(), headers, b.toString());
+			} 
+			
+			
+		} catch (HttpStatusError e) {
+			throw e;
+		} catch (IOException e) {
+			throw check(e);
+		} catch (InterruptedException e) {
+			logger.warn("RestClient was interrupted: {}", url);
+			throw new IOException("interrupted", e);
+		} catch (URISyntaxException e) {
 			throw new RuntimeException("Non-HTTP protocols not supported. Got URL: " + url);
-		} catch (IOException e) {
-			throw check(e);
 		}
-		// authentication and some settings is static for URLConnection, preserver current setting
-		conn.setInstanceFollowRedirects(true);
-		configure(conn);
-		for (String h : requestHeaders.keySet()) {
-			conn.setRequestProperty(h, requestHeaders.get(h));
-		}
-		logger.info("GET connection to {}", url);
-		try {
-			conn.connect();
-		} catch (IOException e) {
-			throw check(e);
-		}
-		
-		// response should be ok regardless of status, get content
-		ResponseHeaders headers = new URLConnectionResponseHeaders(conn);
-		int responseCode = conn.getResponseCode();
-		
-		// check status code before trying to get response body
-		// to avoid the unclassified IOException
-		// Currently getting body only for 200 OK. 
-		// There might be more 2xx responses with a valuable body.
-		if (responseCode == HttpURLConnection.HTTP_OK) {
-			OutputStream receiver = response.getResponseStream(headers);
-			boolean disconnect = true;
-			try {
-				InputStream body = conn.getInputStream();
-				pipe(body, receiver);
-				body.close();
-				// Should NOT close the receiver, must be handled by calling class.
-				// See HttpClient BasicHttpEntity.writeTo(..) for consistency btw http clients.
-				//receiver.close();
-				disconnect = false;
-			} catch (IOException e) {
-				throw check(e);
-			} finally {
-				disconnect(conn, disconnect); // potential keepalive if body processing went well.
-			}
-		} else if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-			// redirect within the same protocol will be handled transparently, typically ending up here when redirected btw http/https
-			logger.info("Server responded with redirect ({}): {}", responseCode, headers.get("Location"));
-			ByteArrayOutputStream b = new ByteArrayOutputStream();
-			try {
-				InputStream body = conn.getInputStream();
-				if (body == null) {
-					logger.warn("Redirect did not contain a body.");
-				}
-				pipe(body, b);
-				body.close();
-			} catch (IOException e) {
-				throw check(e);
-			} finally {
-				disconnect(conn, true); // forcing disconnect, will likely retry on HTTPS instead
-			}
-			throw new HttpStatusError(url.toString(), headers, b.toString());
-			
-		} else if (responseCode < 400) { // Other non-error responses.
-			// Do we need to consume a stream if the server sends one? Important when using keep-alive?
-			// Might need to handle a category of responses where we attempt to get the Body but allow failure.
-			
-			disconnect(conn, true); // forcing disconnect, need better management of body.
-			logger.warn("Unsupported HTTP response code: {}", responseCode);
-			//throw new RuntimeException("Unsupported HTTP response code: " + responseCode);
-			
-		} else { // Error stream expected for 4xx and 5xx.
-			ByteArrayOutputStream b = new ByteArrayOutputStream();
-			try {
-				InputStream body = conn.getErrorStream();
-				if (body == null) {
-					throw new RuntimeException("Response error could not be read for status " + conn.getResponseCode());
-				}
-				pipe(body, b);
-				body.close();
-			} catch (IOException e) {
-				throw check(e);
-			} finally {
-				disconnect(conn, true); // forcing disconnect at this time, consider enabling keepalive in the future
-			}
-			throw new HttpStatusError(url.toString(), headers, b.toString());
-		} 
-		
-		
 	}
+
 	
 	private static void setAuthHeaderBasic(Map<String, String> requestHeaders, String username, String password) {
 		
@@ -235,38 +249,7 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 		this.authenticationForced = authenticationForced;
 	}
 	
-	/**
-	 * Makes the http client allow keepalive between requests.
-	 * @param keepalive
-	 */
-	public void setKeepalive(boolean keepalive) {
-		this.keepalive = keepalive;
-	}
 
-	/**
-	 * Shared configuration for all request methods.
-	 * @param conn opened but not connected
-	 */
-	protected void configure(HttpURLConnection conn) {
-		conn.setConnectTimeout(timeout);
-		if (conn instanceof HttpsURLConnection) {
-			configureSSL((HttpsURLConnection) conn);
-		}
-	}
-	
-	protected void configureSSL(HttpsURLConnection conn) {
-		if (auth == null) {
-			return;
-		}
-		URL url = conn.getURL();
-		String root = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "");
-		SSLContext ctx = auth.getSSLContext(root);
-		if (ctx == null) {
-			return;
-		}
-		SSLSocketFactory ssl = ctx.getSocketFactory();
-		conn.setSSLSocketFactory(ssl);
-	}
 
 	/**
 	 * Makes post-processing possible.
@@ -285,53 +268,34 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 		}
 	}
 	
-	private void disconnect(HttpURLConnection conn, boolean force) {
-		
-		// Can perform close or disconnect based on configuration.
-		if (force || (!this.keepalive)) {
-			conn.disconnect();
-		}
-	}
 
 	/**
 	 * TODO head should authenticate of auth returns credentials, getUsername should provide method name
 	 */
 	@Override
 	public ResponseHeaders head(URL url) throws IOException {	
-		HttpURLConnection con;
 		try {
-			con = (HttpURLConnection) url.openConnection();
-		} catch (ClassCastException e) {
-			throw new RuntimeException("Non-HTTP protocols not supported. Got URL: " + url);
-		} catch (IOException e) {
-			throw check(e);
-		}
-		con.setRequestMethod("HEAD");
-		con.setInstanceFollowRedirects(false);
-		configure(con);
-		ResponseHeaders head = null;
-		try {
-			logger.warn("attempting HEAD request with java.net client to {}", url); // still not sure if java.net client behaves well for HEAD requests
-			con.connect();
-			logger.trace("HEAD {} connected", url);
-			// gets rid of the EOF issue in Jetty test:
-			InputStream b;
-			if (con.getResponseCode() == 200) {
-				b = con.getInputStream();
-				logger.trace("HEAD {} output requested", url);
-				while (b.read() != -1) {}
-				logger.trace("HEAD {} output read", url);
-				b.close();
-			}
-			logger.trace("HEAD {} output closed", url);
-			head = new URLConnectionResponseHeaders(con);
+			HttpRequest.Builder builder = HttpRequest.newBuilder()
+					.uri(url.toURI())
+					.method("HEAD", HttpRequest.BodyPublishers.noBody());
+
+			ResponseHeaders head = null;
+			logger.debug("attempting HEAD request with java http client: {}", url);
+			HttpResponse<Void> response = clientRedirectNever.send(builder.build(), BodyHandlers.discarding());
+			
+			logger.trace("HEAD {} connection done", url);
+			head = new ResponseHeadersJavaHttp(response);
 			logger.trace("HEAD {} headers read", url);
+			// Intentionally not checking the status code.
+			return head;
 		} catch (IOException e) {
 			throw check(e);
-		} finally {
-			con.disconnect();
+		} catch (InterruptedException e) {
+			logger.warn("RestClient was interrupted: {}", url);
+			throw new IOException("interrupted", e);
+		} catch (URISyntaxException e) {
+			throw new RuntimeException("Non-HTTP protocols not supported. Got URL: " + url);
 		}
-		return head;
 	}
 	
 	private boolean isAuthBasic() {
