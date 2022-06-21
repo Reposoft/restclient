@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.net.http.HttpConnectTimeoutException;
 import java.util.Arrays;
 
@@ -61,6 +62,10 @@ public class RestGetClientJavaIntegrationTest {
 	RestClient client() {
 		return new RestClientJavaHttp(server.getRoot().toString(), null);
 	}
+	
+	RestClient clientBogusHost() {
+		return new RestClientJavaHttp("http://bogus.simonsoft.se", null);
+	}
 
 	@Test public void testGet() throws IOException {
 		server.start();
@@ -75,6 +80,22 @@ public class RestGetClientJavaIntegrationTest {
 		});
 		System.out.flush();
 		assertEquals("should have done 1 request", 1, server.getLog().size());
+	}
+	
+	@Test(expected = UnknownHostException.class)
+	public void testGetUnknownHostException() throws IOException {
+		server.start();
+		RestClient client = clientBogusHost();
+		client.get("/a/b.txt", new RestResponse() {
+			@Override
+			public OutputStream getResponseStream(ResponseHeaders headers) {
+				assertEquals(200, headers.getStatus());
+				assertEquals("text/plain", headers.getContentType());
+				return System.out;
+			}
+		});
+		System.out.flush();
+		fail("should throw exception");
 	}
 
 	@Test public void testGetServerError() {

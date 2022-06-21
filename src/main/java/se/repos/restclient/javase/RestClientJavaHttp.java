@@ -19,13 +19,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.channels.UnresolvedAddressException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -243,8 +247,22 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 
 	/**
 	 * Makes post-processing possible.
+	 * @throws MalformedURLException 
 	 */
 	protected IOException check(IOException e) {
+		Throwable c = e;
+		if (c instanceof ConnectException && c.getCause() != null) {
+			c = c.getCause();
+			// Java 11 HttpClient wraps ConnectExceptions like crazy.
+			if (c instanceof ConnectException && c.getCause() != null) {
+				c = c.getCause();
+				
+				// Java 11 HttpClient throws UnresolvedAddressException (null message) instead of UnknownHostException with the hostname.
+				if (c instanceof UnresolvedAddressException) {
+					return new UnknownHostException(getHost());
+				}
+			}
+		}
 		return e;
 	}
 

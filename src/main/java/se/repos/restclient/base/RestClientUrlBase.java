@@ -31,6 +31,7 @@ import se.repos.restclient.RestResponse;
 public abstract class RestClientUrlBase implements RestClient {
 
 	private String root;
+	private String host;
 
 	/**
 	 * @param serverRootUrl protocol, domain and possibly port number, no trailing slash
@@ -47,7 +48,8 @@ public abstract class RestClientUrlBase implements RestClient {
 			throw new IllegalArgumentException("Server root URL must not end with slash, got " + serverRootUrl);
 		}
 		try {
-			new URL(serverRootUrl);
+			URL url = new URL(serverRootUrl);
+			this.host = url.getHost();
 		} catch (MalformedURLException e) {
 			throw new IllegalArgumentException("Invalid server root URL " + serverRootUrl, e);
 		}
@@ -75,5 +77,9 @@ public abstract class RestClientUrlBase implements RestClient {
 	}
 	
 	public abstract ResponseHeaders head(URL url) throws IOException;
+	
+	protected String getHost() {
+		return host;
+	}
 
 }
