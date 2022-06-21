@@ -107,6 +107,14 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	}
 	
 	
+	
+	/** Experimental, exposing the HttpClient since POST is not implemented in the Restclient interface.
+	 * @return a Java HttpClient built for POST
+	 */
+	public HttpClient getClientPost() {
+		return this.clientRedirectNever;
+	}
+	
 	// Public API, performs BASIC authentication if RestAuthentication has username.
 	@Override
 	public void get(URL url, RestResponse response) throws IOException, HttpStatusError {
@@ -244,12 +252,11 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	}
 	
 
-
 	/**
 	 * Makes post-processing possible.
 	 * @throws MalformedURLException 
 	 */
-	protected IOException check(IOException e) {
+	public IOException check(IOException e) {
 		Throwable c = e;
 		if (c instanceof ConnectException && c.getCause() != null) {
 			c = c.getCause();
@@ -266,6 +273,7 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 		return e;
 	}
 
+	
 	private void pipe(InputStream source, OutputStream destination) throws IOException {
 		source.transferTo(destination);
 	}
