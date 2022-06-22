@@ -16,22 +16,19 @@
 package se.repos.restclient.javase;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
+import java.net.http.HttpResponse;
+
 import se.repos.restclient.base.ResponseHeadersMap;
 
-class URLConnectionResponseHeaders extends ResponseHeadersMap {
+class ResponseHeadersJavaHttp extends ResponseHeadersMap {
 
 	private String contentType;
 	private int status;
 
-	public URLConnectionResponseHeaders(HttpURLConnection con) throws IOException {
-		super(con.getHeaderFields());
-		try {
-			this.status = con.getResponseCode();
-		} catch (IOException e) {
-			throw e;
-		}
-		this.contentType = con.getContentType();
+	public ResponseHeadersJavaHttp(HttpResponse<?> response) throws IOException {
+		super(response.headers().map());
+		this.status = response.statusCode();
+		this.contentType = response.headers().firstValue("Content-Type").orElse(null);
 	}
 
 	@Override

@@ -23,11 +23,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.net.http.HttpConnectTimeoutException;
 import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import se.repos.restclient.HttpStatusError;
@@ -59,7 +60,11 @@ public class RestGetClientJavaIntegrationTest {
 	}
 	
 	RestClient client() {
-		return new RestClientJavaNet(server.getRoot().toString(), null);
+		return new RestClientJavaHttp(server.getRoot().toString(), null);
+	}
+	
+	RestClient clientBogusHost() {
+		return new RestClientJavaHttp("http://bogus.simonsoft.se", null);
 	}
 
 	@Test public void testGet() throws IOException {
@@ -75,6 +80,22 @@ public class RestGetClientJavaIntegrationTest {
 		});
 		System.out.flush();
 		assertEquals("should have done 1 request", 1, server.getLog().size());
+	}
+	
+	@Test(expected = UnknownHostException.class)
+	public void testGetUnknownHostException() throws IOException {
+		server.start();
+		RestClient client = clientBogusHost();
+		client.get("/a/b.txt", new RestResponse() {
+			@Override
+			public OutputStream getResponseStream(ResponseHeaders headers) {
+				assertEquals(200, headers.getStatus());
+				assertEquals("text/plain", headers.getContentType());
+				return System.out;
+			}
+		});
+		System.out.flush();
+		fail("should throw exception");
 	}
 
 	@Test public void testGetServerError() {
@@ -213,8 +234,7 @@ public class RestGetClientJavaIntegrationTest {
 	}
 	
 	@Test public void testFollowRedirectHttps() throws IOException {
-		// Java will not follow redirect across protocols.
-		// Could be a future feature of restclient to transparently follow redirect from http to https (not the other direction).
+		// Java 11 will follow redirect from http to https (not the other direction).
 		server.createContext("/1").setHandler(new HttpHandler() {
 			@Override
 			public void handle(HttpExchange e) throws IOException {
@@ -244,8 +264,15 @@ public class RestGetClientJavaIntegrationTest {
 				}
 			});
 			fail("should not redirect to HTTPS");
+		} catch (HttpConnectTimeoutException e) {
+			// No SSL server up and running, will timeout.
+			assertEquals("HTTP connect timed out", e.getMessage());
+			assertEquals("java.net.http.HttpConnectTimeoutException", e.getCause().getClass().getName()); // Same exception wrapped, strange.
+			assertEquals("java.net.ConnectException", e.getCause().getCause().getClass().getName());
+		/*
 		} catch (HttpStatusError e) {
 			assertEquals("", 302, e.getHttpStatus());
+		*/
 		}
 	}
 	

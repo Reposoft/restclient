@@ -20,6 +20,8 @@ import java.util.Map;
 
 public interface ResponseHeaders extends Map<String, List<String>> {
 
+	// TODO: Consider exposing the Java 11 HttpHeaders instance (very good modern API)
+	
 	String getContentType();
 
 	/**
