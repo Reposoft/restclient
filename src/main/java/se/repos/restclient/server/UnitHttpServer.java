@@ -36,6 +36,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+// TODO: Consider HttpTestServer used by Java 11 httpclient, see http://hg.openjdk.java.net/jdk/sandbox/rev/aa677dd4c174
+
 /**
  * HTTP server suitable for unit testing
  * and simple embedded services.
