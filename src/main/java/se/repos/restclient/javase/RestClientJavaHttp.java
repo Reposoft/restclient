@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
+import java.net.CookieManager;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -86,6 +87,15 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	public RestClientJavaHttp(
 			@Named("config:se.repos.restclient.serverRootUrl") String serverRootUrl,
 			RestAuthentication auth) {
+		this(serverRootUrl, auth, null);
+	}
+	
+	//@Inject
+	// Currently no constructor for CDI with CookieManager. Investigate best approach in Quarkus.
+	public RestClientJavaHttp(
+			@Named("config:se.repos.restclient.serverRootUrl") String serverRootUrl,
+			RestAuthentication auth,
+			CookieManager cookieManager) {
 		super(serverRootUrl);
 		this.auth = auth;
 		
@@ -102,6 +112,13 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 			builderRedirectNormal.sslContext(sslContext);
 			builderRedirectNever.sslContext(sslContext);
 		}
+		
+		if (cookieManager != null) {
+			logger.info("Using provided CookieManager for Java HttpClient: {}", cookieManager);
+			builderRedirectNormal.cookieHandler(cookieManager);
+			builderRedirectNever.cookieHandler(cookieManager);
+		}
+		
 		this.clientRedirectNormal = builderRedirectNormal.build();
 		this.clientRedirectNever = builderRedirectNever.build();
 	}
@@ -284,10 +301,18 @@ public class RestClientJavaHttp extends RestClientUrlBase {
 	 */
 	@Override
 	public ResponseHeaders head(URL url) throws IOException {	
+		return head(url, new HashMap<String, String>());
+	}
+	
+	public ResponseHeaders head(URL url, Map<String,String> requestHeaders) throws IOException {
 		try {
 			HttpRequest.Builder builder = HttpRequest.newBuilder()
 					.uri(url.toURI())
 					.method("HEAD", HttpRequest.BodyPublishers.noBody());
+			
+			for (String h : requestHeaders.keySet()) {
+				builder.header(h, requestHeaders.get(h));
+			}
 
 			ResponseHeaders head = null;
 			logger.debug("attempting HEAD request with java http client: {}", url);
